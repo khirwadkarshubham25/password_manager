@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Create Your Account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header Navigation -->
+    <header class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-end items-end">
+                <nav class="flex items-end space-x-6">
+                    <a href="/vault/login" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                        Sign In
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+
+        <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
+                <p class="text-gray-600">Join us today and get started</p>
+            </div>
+
+            <!-- Error Message Container -->
+            <div id="errorContainer" class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p id="errorMessage" class="text-red-600 text-sm"></p>
+            </div>
+
+            <!-- Success Message Container -->
+            <div id="successContainer" class="hidden mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p id="successMessage" class="text-green-600 text-sm"></p>
+            </div>
+
+            <!-- Sign Up Form -->
+            <form id="signupForm" class="space-y-4" novalidate>
+                {% csrf_token %}
+
+                <!-- Username Field -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                        Username
+                    </label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Enter your username"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    />
+                </div>
+
+                <!-- First Name Field -->
+                <div>
+                    <label for="firstName" class="block text-sm font-medium text-gray-700 mb-2">
+                        First Name
+                    </label>
+                    <input
+                        type="text"
+                        id="firstName"
+                        name="first_name"
+                        placeholder="Enter your first name"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    />
+                </div>
+
+                <!-- Last Name Field -->
+                <div>
+                    <label for="lastName" class="block text-sm font-medium text-gray-700 mb-2">
+                        Last Name
+                    </label>
+                    <input
+                        type="text"
+                        id="lastName"
+                        name="last_name"
+                        placeholder="Enter your last name"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    />
+                </div>
+
+                <!-- Email Field -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                    </label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    />
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Enter your password"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition pr-12"
+                        />
+                        <button
+                            type="button"
+                            onclick="togglePasswordVisibility('password', 'togglePasswordBtn')"
+                            id="togglePasswordBtn"
+                            class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm Password
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirm_password"
+                            placeholder="Confirm your password"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition pr-12"
+                        />
+                        <button
+                            type="button"
+                            onclick="togglePasswordVisibility('confirmPassword', 'toggleConfirmPasswordBtn')"
+                            id="toggleConfirmPasswordBtn"
+                            class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Password Match Indicator -->
+                <div id="passwordMatchIndicator" class="hidden">
+                    <div class="flex items-center mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <svg class="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span id="passwordMatchText" class="text-sm text-red-600">Passwords do not match</span>
+                    </div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="flex items-start mt-6">
+                    <input
+                        type="checkbox"
+                        id="terms"
+                        name="terms"
+                        class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer mt-1"
+                    />
+                    <label for="terms" class="ml-3 text-sm text-gray-700">
+                        I agree to the
+                        <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">Terms of Service</a>
+                        and
+                        <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <!-- Sign Up Button -->
+                <button
+                    type="submit"
+                    id="submitBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200 mt-6"
+                >
+                    Create Account
+                </button>
+            </form>
+
+            <!-- Sign In Link -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">
+                    Already have an account?
+                    <a href="/vault/login" class="text-blue-600 hover:text-blue-700 font-medium">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get form elements
+        const form = document.getElementById('signupForm');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const successContainer = document.getElementById('successContainer');
+        const successMessage = document.getElementById('successMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Check password match in real-time
+        function checkPasswordMatch() {
+            const indicator = document.getElementById('passwordMatchIndicator');
+            const matchText = document.getElementById('passwordMatchText');
+
+            if (passwordInput.value && confirmPasswordInput.value) {
+                if (passwordInput.value !== confirmPasswordInput.value) {
+                    indicator.classList.remove('hidden');
+                    matchText.textContent = 'Passwords do not match';
+                    matchText.parentElement.parentElement.classList.remove('bg-green-50', 'border-green-200');
+                    matchText.parentElement.parentElement.classList.add('bg-red-50', 'border-red-200');
+                    matchText.classList.remove('text-green-600');
+                    matchText.classList.add('text-red-600');
+                    matchText.parentElement.querySelector('svg').classList.remove('text-green-600');
+                    matchText.parentElement.querySelector('svg').classList.add('text-red-600');
+                } else {
+                    indicator.classList.remove('hidden');
+                    matchText.textContent = 'Passwords match';
+                    matchText.parentElement.parentElement.classList.remove('bg-red-50', 'border-red-200');
+                    matchText.parentElement.parentElement.classList.add('bg-green-50', 'border-green-200');
+                    matchText.classList.remove('text-red-600');
+                    matchText.classList.add('text-green-600');
+                    matchText.parentElement.querySelector('svg').classList.remove('text-red-600');
+                    matchText.parentElement.querySelector('svg').classList.add('text-green-600');
+                    // Change SVG to checkmark
+                    matchText.parentElement.querySelector('svg').innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>';
+                }
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        // Toggle password visibility
+        function togglePasswordVisibility(fieldId, buttonId) {
+            const field = document.getElementById(fieldId);
+            const button = document.getElementById(buttonId);
+
+            if (field.type === 'password') {
+                field.type = 'text';
+                button.classList.add('text-blue-600');
+            } else {
+                field.type = 'password';
+                button.classList.remove('text-blue-600');
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorContainer.classList.remove('hidden');
+            successContainer.classList.add('hidden');
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successContainer.classList.remove('hidden');
+            errorContainer.classList.add('hidden');
+        }
+
+        // Hide error message
+        function hideError() {
+            errorContainer.classList.add('hidden');
+        }
+
+        // Real-time password match check
+        passwordInput.addEventListener('input', checkPasswordMatch);
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        // Form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError();
+
+            // Check if passwords match
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                showError('Passwords do not match!');
+                return;
+            }
+
+            // Check if terms are accepted
+            if (!document.getElementById('terms').checked) {
+                showError('You must agree to the Terms of Service and Privacy Policy');
+                return;
+            }
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+
+            // Get CSRF token
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // Prepare form data
+            const formData = {
+                username: document.getElementById('username').value,
+                first_name: document.getElementById('firstName').value,
+                last_name: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                password: passwordInput.value
+            };
+
+            try {
+                // Send to server
+                const response = await fetch('/vault/create_master_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                console.log(data)
+                if (response.ok) {
+                    showSuccess('Account created successfully! Redirecting to login...');
+
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/vault/login';
+                    }, 2000);
+
+                    // Reset form
+                    form.reset();
+                    document.getElementById('passwordMatchIndicator').classList.add('hidden');
+                } else {
+                    showError(data.message || 'Error creating account. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Something went wrong. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>
