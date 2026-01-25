@@ -3,14 +3,18 @@ class GenericConstants:
         "message": "Internal server error!"
     }
 
-    SIGNUP_ERROR_MESSAGE = "Sign up error"
-    SIGNUP_SUCCESS_MESSAGE = "User created successfully. Go to Login Page to login"
+    REGISTRATION_ERROR_MESSAGE = "Registration Failed"
+    REGISTRATION_SUCCESS_MESSAGE = "User created successfully."
 
     USER_EMAIL_EXISTS_ERROR_MESSAGE = "User email:{} already exists"
     USERNAME_EXISTS_ERROR_MESSAGE = "Username {} already exists"
 
     CREATE_PASSWORD_ERROR_MESSAGE = "Password creation error"
     CREATE_PASSWORD_SUCCESS_MESSAGE = "Password added successfully"
+    UPDATE_PASSWORD_ERROR_MESSAGE = "Password update error"
+    UPDATE_PASSWORD_SUCCESS_MESSAGE = "Password updated successfully"
+    DELETE_PASSWORD_ERROR_MESSAGE = "Password deletion error"
+    DELETE_PASSWORD_SUCCESS_MESSAGE = "Password deleted successfully"
 
     USERNAME_MANDATORY_FIELD_ERROR_MESSAGE = "Username is required"
     USERNAME_INSTANCE_ERROR_MESSAGE = "Username must be string"
@@ -52,9 +56,25 @@ class GenericConstants:
     }
 
     USER_NOT_FOUND = "User not found"
+    USER_PASSWORD_NOT_FOUND = "User Password not found"
     INVALID_EMAIL_PASSWORD = "Invalid email/password"
+    INVALID_USER_ID = "Invalid User ID"
+    INVALID_USER_PASSWORD_ID = "Invalid User Password ID"
 
     API_TOKEN_TYPE = 'api_token'
     REFRESH_TOKEN_TYPE = 'refresh_token'
 
     LOGIN_SUCCESS_MESSAGE = "Successfully logged in"
+    LOGIN_FAILED_MESSAGE = "Login failed"
+
+    DECRYPTED_PASSWORD_ERROR_MESSAGE = "Error in decrypting password"
+
+    INVALID_REQUESTS = "Invalid requests"
+
+    TOKEN_EXTRACTION_ERROR_MESSAGE = "Error in extracting token"
+
+    PLATFORM_MANDATORY_FIELD_ERROR_MESSAGE = "Platform is required"
+    URL_MANDATORY_FIELD_ERROR_MESSAGE = "URL is required"
+    PASSWORD_ENTRY_ALREADY_EXISTS_ERROR_MESSAGE = "Password entry already exists"
+    PASSWORD_ENTRY_CREATED_SUCCESS_MESSAGE = "New password details are successfully created"
+    PASSWORD_ENTRY_CREATED_ERROR_MESSAGE = "Error in creating new password"
