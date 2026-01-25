@@ -58,9 +58,9 @@ class PasswordVaultManagerServiceHelper(BaseService, ABC):
     def get_expiry(token_type):
         exp = None
         if token_type == GenericConstants.API_TOKEN_TYPE:
-            exp = datetime.now(timezone.utc) + timedelta(minutes=20)
+            exp = datetime.now(timezone.utc) + timedelta(minutes=GenericConstants.API_TOKEN_TIME)
         elif token_type == GenericConstants.REFRESH_TOKEN_TYPE:
-            exp = datetime.now(timezone.utc) + timedelta(minutes=60)
+            exp = datetime.now(timezone.utc) + timedelta(minutes=GenericConstants.REFRESH_TOKEN_TIME)
 
         return exp
 

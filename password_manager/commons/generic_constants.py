@@ -64,6 +64,9 @@ class GenericConstants:
     API_TOKEN_TYPE = 'api_token'
     REFRESH_TOKEN_TYPE = 'refresh_token'
 
+    API_TOKEN_TIME = 20
+    REFRESH_TOKEN_TIME = 60
+
     LOGIN_SUCCESS_MESSAGE = "Successfully logged in"
     LOGIN_FAILED_MESSAGE = "Login failed"
 
