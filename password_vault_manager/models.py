@@ -19,6 +19,7 @@ class UserPasswords(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
     platform = models.CharField(max_length=100, null=False)
     url = models.CharField(max_length=255, null=False)
+    email = models.CharField(max_length=255, null=False)
     password = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
