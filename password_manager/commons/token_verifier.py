@@ -128,7 +128,7 @@ class TokenVerifier:
 
         if not user_id:
             error_response = JsonResponse(
-                {'message': 'user_id not found in token'},
+                {'message': GenericConstants.TOKEN_USER_ID_NOT_FOUND_ERROR_MESSAGE},
                 status=status.HTTP_401_UNAUTHORIZED
             )
             return False, error_response

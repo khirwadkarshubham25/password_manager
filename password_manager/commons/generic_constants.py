@@ -78,3 +78,9 @@ class GenericConstants:
     PASSWORD_ENTRY_ALREADY_EXISTS_ERROR_MESSAGE = "Password entry already exists"
     PASSWORD_ENTRY_CREATED_SUCCESS_MESSAGE = "New password details are successfully created"
     PASSWORD_ENTRY_CREATED_ERROR_MESSAGE = "Error in creating new password"
+
+    REFRESH_TOKEN_MANDATORY_ERROR_MESSAGE = "Refresh Token is required"
+    TOKEN_USER_ID_NOT_FOUND_ERROR_MESSAGE = "User ID Not Found"
+
+    TOKEN_REFRESH_SUCCESS_MESSAGE = "Successfully refresh token"
+    TOKEN_REFRESH_ERROR_MESSAGE = "Error in refreshing token"

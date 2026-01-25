@@ -526,12 +526,78 @@
             return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         }
 
-        // Get auth token from localStorage
-        function getAuthToken() {
-            const token = localStorage.getItem('api_token');
-            if (!token) {
+        // Check if token is expired
+        function isTokenExpired(expiryString) {
+            if (!expiryString) return true;
+            const expiry = new Date(expiryString);
+            const now = new Date();
+            // Consider token expired if less than 1 minute remaining
+            const timeRemaining = expiry - now;
+            return timeRemaining < 60000; // 60 seconds
+        }
+
+        // Refresh token using refresh_token
+        async function refreshTokens() {
+            const refreshToken = localStorage.getItem('refresh_token');
+
+            if (!refreshToken) {
+                console.error('No refresh token available');
                 window.location.href = '/login';
+                return null;
             }
+
+            try {
+                const response = await fetch('/refresh_token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        refresh_token: refreshToken
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    console.error('Token refresh failed:', result.message);
+                    // Redirect to login if refresh fails
+                    window.location.href = '/login';
+                    return null;
+                }
+
+                // Store new tokens
+                localStorage.setItem('api_token', result.api_token);
+                localStorage.setItem('api_token_expiry', result.api_token_expiry);
+                localStorage.setItem('refresh_token', result.refresh_token);
+                localStorage.setItem('refresh_token_expiry', result.refresh_token_expiry);
+
+                console.log('Tokens refreshed successfully');
+                return result.api_token;
+
+            } catch (error) {
+                console.error('Error refreshing tokens:', error);
+                window.location.href = '/login';
+                return null;
+            }
+        }
+
+        // Get auth token from localStorage (with auto-refresh)
+        async function getAuthToken() {
+            let token = localStorage.getItem('api_token');
+            const expiry = localStorage.getItem('api_token_expiry');
+
+            // Check if token is expired or about to expire
+            if (isTokenExpired(expiry)) {
+                console.log('API token expired or expiring soon, refreshing...');
+                token = await refreshTokens();
+                if (!token) {
+                    window.location.href = '/login';
+                    return null;
+                }
+            }
+
             return token;
         }
 
@@ -605,7 +671,14 @@
             event.preventDefault();
 
             const userId = localStorage.getItem('user_id');
-            const token = getAuthToken();
+            const token = await getAuthToken();
+
+            if (!token) {
+                alert('Authentication failed. Please log in again.');
+                window.location.href = '/login';
+                return;
+            }
+
             const email = document.getElementById('email').value;
             const platform = document.getElementById('platform').value;
             const url = document.getElementById('url').value;
@@ -691,11 +764,21 @@
             }
 
             try {
+                // Refresh token if needed
+                let currentToken = token;
+                const expiry = localStorage.getItem('api_token_expiry');
+                if (isTokenExpired(expiry)) {
+                    currentToken = await refreshTokens();
+                    if (!currentToken) {
+                        throw new Error('Authentication failed');
+                    }
+                }
+
                 const response = await fetch('/manage_password', {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${currentToken}`,
                         'X-CSRFToken': getCsrfToken()
                     },
                     body: JSON.stringify({
@@ -710,7 +793,7 @@
                 }
 
                 const userId = localStorage.getItem('user_id');
-                await loadPasswords(userId, token);
+                await loadPasswords(userId, currentToken);
             } catch (error) {
                 alert(`Error: ${error.message}`);
             }
@@ -719,11 +802,21 @@
         // Copy password to clipboard
         async function copyPassword(passwordId, token, userId) {
             try {
+                // Refresh token if needed
+                let currentToken = token;
+                const expiry = localStorage.getItem('api_token_expiry');
+                if (isTokenExpired(expiry)) {
+                    currentToken = await refreshTokens();
+                    if (!currentToken) {
+                        throw new Error('Authentication failed');
+                    }
+                }
+
                 const response = await fetch(`/manage_password?user_id=${userId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${currentToken}`,
                         'X-CSRFToken': getCsrfToken()
                     }
                 });
@@ -749,11 +842,21 @@
         // Load passwords from API
         async function loadPasswords(userId, token) {
             try {
+                // Refresh token if needed
+                let currentToken = token;
+                const expiry = localStorage.getItem('api_token_expiry');
+                if (isTokenExpired(expiry)) {
+                    currentToken = await refreshTokens();
+                    if (!currentToken) {
+                        throw new Error('Authentication failed');
+                    }
+                }
+
                 const response = await fetch(`/manage_password?user_id=${userId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${currentToken}`,
                         'X-CSRFToken': getCsrfToken()
                     }
                 });
@@ -764,7 +867,7 @@
                     throw new Error(result.message || 'Failed to load passwords');
                 }
 
-                displayPasswords(result.passwords, token, userId);
+                displayPasswords(result.passwords, currentToken, userId);
 
                 // Update stats
                 document.getElementById('totalPasswords').textContent = result.count;
@@ -831,8 +934,12 @@
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async function() {
             const userId = loadUserData();
-            const token = getAuthToken();
-            await loadPasswords(userId, token);
+            const token = await getAuthToken();
+            if (token) {
+                await loadPasswords(userId, token);
+            } else {
+                window.location.href = '/login';
+            }
         });
     </script>
 </body>

@@ -4,6 +4,7 @@ from password_vault_manager.services.create_password_service import CreatePasswo
 from password_vault_manager.services.delete_password_service import DeletePasswordService
 from password_vault_manager.services.get_passwords_service import GetPasswordsService
 from password_vault_manager.services.login_user_service import LoginUserService
+from password_vault_manager.services.refresh_token import RefreshTokenService
 from password_vault_manager.services.register_user_service import RegisterUserService
 from password_vault_manager.services.update_password_service import UpdatePasswordService
 
@@ -14,6 +15,7 @@ class ViewServices:
         self.service_config = {
             'register_user': self.RegisterUser,
             'login_user': self.Login,
+            'refresh_token': self.RefreshToken,
             'get_passwords': self.GetPasswords,
             'create_password': self.CreatePassword,
             'update_password': self.UpdatePassword,
@@ -40,6 +42,11 @@ class ViewServices:
         @staticmethod
         def get_instance():
             return LoginUserService()
+
+    class RefreshToken:
+        @staticmethod
+        def get_instance():
+            return RefreshTokenService()
 
     class GetPasswords:
         @staticmethod

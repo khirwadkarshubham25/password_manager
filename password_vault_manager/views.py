@@ -91,3 +91,14 @@ class ManagePassword(View):
         service_obj = ViewServices(service_name='delete_password')
         status_code, data = service_obj.execute_service(*args, **kwargs)
         return JsonResponse(data, safe=False, status=status_code)
+
+class RefreshToken(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+
+        kwargs.update({
+            'data': data
+        })
+        service_obj = ViewServices(service_name='refresh_token')
+        status_code, data = service_obj.execute_service(*args, **kwargs)
+        return JsonResponse(data, safe=False, status=status_code)
