@@ -1,6 +1,6 @@
-MIT License
+# MIT License
 
-Copyright (c) 2026 Shubham Khirwadkar
+Copyright (c) 2026 Password Manager
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,81 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## What This License Means
+
+### ✅ You CAN:
+
+- **Use** the software for any purpose (commercial or non-commercial)
+- **Copy** the software and distribute it
+- **Modify** the software and create derivative works
+- **Sublicense** the software (include it in your own projects)
+- **Use** it in proprietary applications
+
+### ❌ You CANNOT:
+
+- Hold the authors liable for any issues
+- Remove the copyright notice or license
+
+### ⚠️ You MUST:
+
+- Include a copy of the license in any distribution
+- State significant changes you made to the software
+- Provide the copyright notice
+
+---
+
+## Simple Summary
+
+This is a **permissive open source license**. Basically:
+
+1. **Do what you want** with the code (use, modify, distribute, etc.)
+2. **Give credit** to the original authors
+3. **Don't blame us** if something breaks
+4. **Include the license** when you share it
+
+---
+
+## FAQ
+
+### Can I use this in my commercial product?
+**Yes!** You can use it in commercial applications without paying anything.
+
+### Do I need to open-source my modifications?
+**No!** You can keep your modifications private. You only need to include the original license.
+
+### Can I remove the copyright notice?
+**No!** You must keep the original copyright notice in any copies or derivative works.
+
+### Can I relicense it?
+**Yes!** You can sublicense it under different terms (though you must still comply with the MIT License).
+
+### What if something goes wrong?
+**You're on your own.** The software is provided "as is" without warranty. The authors are not responsible for any damages.
+
+---
+
+## Why MIT License?
+
+The MIT License is chosen because:
+
+✅ **Simple and permissive** - Easy to understand
+✅ **Developer-friendly** - Allows commercial use
+✅ **Popular** - Used by major projects (jQuery, Rails, Node.js, etc.)
+✅ **Business-friendly** - Companies feel comfortable using it
+✅ **Flexible** - Can be used in open source or proprietary projects
+
+---
+
+## For More Information
+
+Learn more about the MIT License at: https://opensource.org/licenses/MIT
+
+---
+
+**Year:** 2026
+**Software:** Password Manager
+**License Type:** MIT
+**Full Name:** Massachusetts Institute of Technology License
