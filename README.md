@@ -81,7 +81,8 @@ Visit: `http://localhost:8000`
 2. Create account with username, email, password
 3. Password must be 8+ characters with complexity
 
-**[SCREENSHOT: Registration Page - Add screenshot here]**
+<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-22-31" src="https://github.com/user-attachments/assets/b61b6430-1f8e-44d9-9c53-4a6b0a3a9a2d" />
+
 
 ---
 
@@ -91,7 +92,8 @@ Visit: `http://localhost:8000`
 3. Tokens stored in localStorage automatically
 4. Session lasts up to 60 minutes with auto-refresh
 
-**[SCREENSHOT: Login Page - Add screenshot here]**
+<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-23-31" src="https://github.com/user-attachments/assets/667f6600-ec76-4640-a7c1-5f5f6911be21" />
+
 
 ---
 
@@ -101,9 +103,12 @@ Visit: `http://localhost:8000`
 - **Copy:** Click "Copy" → Password in clipboard
 - **Delete:** Click "Delete" → Confirm
 
-**[SCREENSHOT: Dashboard - Password List - Add screenshot here]**
+<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-24-17" src="https://github.com/user-attachments/assets/f938d3e0-b15e-4b64-8e89-93b76e61d339" />
 
-**[SCREENSHOT: Add/Edit Password Modal - Add screenshot here]**
+<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-24-41" src="https://github.com/user-attachments/assets/9247d44c-bb19-4e7d-9baa-87c867d594a8" />
+
+<img width="1916" height="956" alt="image" src="https://github.com/user-attachments/assets/0fd298f6-c4c9-4c2b-afe9-99ebf1ee32b9" />
+
 
 ---
 
