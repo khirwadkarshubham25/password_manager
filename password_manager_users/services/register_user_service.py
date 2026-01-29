@@ -1,6 +1,7 @@
+from password_manager.commons.commons import Commons
 from password_manager.commons.generic_constants import GenericConstants
 from password_vault_manager.models import Users
-from password_vault_manager.services.crypto_service import CryptoService
+from password_manager.services.crypto_service import CryptoService
 from rest_framework import status
 
 from password_vault_manager.services.service_helper.password_vault_manager_service_helper import \
@@ -79,7 +80,7 @@ class RegisterUserService(PasswordVaultManagerServiceHelper):
             }
 
             # Generate both API and refresh tokens
-            tokens = self.generate_tokens(api_payload)
+            tokens = Commons.generate_tokens(api_payload)
 
             self.set_status_code(status_code = status.HTTP_201_CREATED)
             return {

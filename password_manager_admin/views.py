@@ -9,7 +9,7 @@ from password_manager.services.view_services import ViewServices
 
 class RegisterAdminUser(View):
     def get(self, request, *args, **kwargs):
-        return render(request=request, template_name='register.html')
+        return render(request=request, template_name='admin_register.html')
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -24,7 +24,7 @@ class RegisterAdminUser(View):
 
 class LoginAdminUser(View):
     def get(self, request, *args, **kwargs):
-        return render(request=request, template_name='login.html')
+        return render(request=request, template_name='admin_login.html')
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -38,7 +38,7 @@ class LoginAdminUser(View):
 
 class Dashboard(View):
     def get(self, request, *args, **kwargs):
-        return render(request=request, template_name='dashboard.html')
+        return render(request=request, template_name='admin_dashboard.html')
 
 
 class ManageUsers(View):
@@ -84,6 +84,7 @@ class ManageUsers(View):
 class RefreshToken(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        data["is_admin"] = True
 
         kwargs.update({
             'data': data

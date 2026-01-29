@@ -1,15 +1,9 @@
-import copy
-
-import jwt
-
-from cryptography.fernet import Fernet
-from mypy_django_plugin.lib.fullnames import OBJECT_DOES_NOT_EXIST
 from rest_framework import status
 
-from password_manager import settings
+from password_manager.commons.commons import Commons
 from password_manager.commons.generic_constants import GenericConstants
 from password_vault_manager.models import Users
-from password_vault_manager.services.crypto_service import CryptoService
+from password_manager.services.crypto_service import CryptoService
 from password_vault_manager.services.service_helper.password_vault_manager_service_helper import \
     PasswordVaultManagerServiceHelper
 
@@ -57,7 +51,7 @@ class LoginUserService(PasswordVaultManagerServiceHelper):
             }
 
             # Generate both API and refresh tokens
-            tokens = self.generate_tokens(api_payload)
+            tokens = Commons.generate_tokens(api_payload)
 
             self.set_status_code(status_code=status.HTTP_200_OK)
             return {

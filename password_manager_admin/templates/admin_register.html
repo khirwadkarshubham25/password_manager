@@ -305,7 +305,7 @@
 <body>
     <nav class="navbar">
         <a href="/" class="navbar-brand">Password Manager</a>
-        <a href="/login/" class="navbar-link">Login</a>
+        <a href="/admin/login" class="navbar-link">Login</a>
     </nav>
 
     <div class="main-content">
@@ -366,7 +366,7 @@
             </form>
 
             <div class="login-link">
-                Already have an account? <a href="/login/">Login here</a>
+                Already have an account? <a href="/admin/login">Login here</a>
             </div>
         </div>
     </div>
@@ -469,7 +469,7 @@
             };
 
             try {
-                const response = await fetch('/register/', {
+                const response = await fetch('/admin/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -501,7 +501,7 @@
 
                     // Redirect after 2 seconds
                     setTimeout(() => {
-                        window.location.href = '/dashboard';
+                        window.location.href = '/admin/admin_dashboard';
                     }, 2000);
                 } else {
                     // Handle errors

@@ -5,7 +5,7 @@ from password_manager.commons.generic_constants import GenericConstants
 from password_manager_admin.models import AdminUsers
 from password_manager_admin.services.service_helper.password_admin_manager_service_helper import \
     PasswordAdminManagerServiceHelper
-from password_vault_manager.services.crypto_service import CryptoService
+from password_manager.services.crypto_service import CryptoService
 
 
 class RegisterAdminUserService(PasswordAdminManagerServiceHelper):
