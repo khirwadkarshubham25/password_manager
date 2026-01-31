@@ -1,6 +1,6 @@
 from password_manager.commons.generic_constants import GenericConstants
 from password_vault_manager.models import Users, UserPasswords
-from password_vault_manager.services.crypto_service import CryptoService
+from password_manager.services.crypto_service import CryptoService
 from rest_framework import status
 
 from password_vault_manager.services.service_helper.password_vault_manager_service_helper import \
