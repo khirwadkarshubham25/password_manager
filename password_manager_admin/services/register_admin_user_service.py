@@ -68,7 +68,7 @@ class RegisterAdminUserService(PasswordAdminManagerServiceHelper):
 
             # Create payload for API token
             api_payload = {
-                'user_id': user.id,
+                'admin_user_id': user.id,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
             }
@@ -79,7 +79,7 @@ class RegisterAdminUserService(PasswordAdminManagerServiceHelper):
             self.set_status_code(status_code=status.HTTP_201_CREATED)
             return {
                 'message': GenericConstants.REGISTRATION_SUCCESS_MESSAGE,
-                'user_id': user.id,
+                'admin_user_id': user.id,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 **tokens

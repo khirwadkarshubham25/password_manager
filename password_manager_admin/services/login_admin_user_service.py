@@ -42,7 +42,7 @@ class LoginAdminUserService(PasswordAdminManagerServiceHelper):
                 return {"message": GenericConstants.INVALID_EMAIL_PASSWORD}
 
             api_payload = {
-                'user_id': user.id,
+                'admin_user_id': user.id,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
             }
@@ -53,7 +53,7 @@ class LoginAdminUserService(PasswordAdminManagerServiceHelper):
             self.set_status_code(status_code=status.HTTP_200_OK)
             return {
                 'message': GenericConstants.LOGIN_SUCCESS_MESSAGE,
-                'user_id': user.id,
+                'admin_user_id': user.id,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 **tokens
