@@ -19,6 +19,6 @@ from django.urls import path, include
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include("password_vault_manager.urls")),
+    path('admin/', include("password_manager_admin.urls")),
+    path('password_manager/', include("password_vault_manager.urls"))
 ]

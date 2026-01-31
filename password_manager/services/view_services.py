@@ -1,11 +1,13 @@
 from rest_framework import status
 
+from password_manager_admin.services.login_admin_user_service import LoginAdminUserService
+from password_manager_admin.services.register_admin_user_service import RegisterAdminUserService
 from password_vault_manager.services.create_password_service import CreatePasswordService
 from password_vault_manager.services.delete_password_service import DeletePasswordService
 from password_vault_manager.services.get_passwords_service import GetPasswordsService
-from password_vault_manager.services.login_user_service import LoginUserService
-from password_vault_manager.services.refresh_token import RefreshTokenService
-from password_vault_manager.services.register_user_service import RegisterUserService
+from password_vault_manager.services.login_service import LoginService
+from password_manager.services.refresh_token import RefreshTokenService
+from password_vault_manager.services.register_service import RegisterService
 from password_vault_manager.services.update_password_service import UpdatePasswordService
 
 
@@ -13,13 +15,20 @@ class ViewServices:
 
     def __init__(self, service_name=None):
         self.service_config = {
+            'register_admin_user': self.RegisterAdminUser,
+            'login_admin_user': self.LoginAdminUser,
+
             'register_user': self.RegisterUser,
             'login_user': self.Login,
+
             'refresh_token': self.RefreshToken,
+
             'get_passwords': self.GetPasswords,
             'create_password': self.CreatePassword,
             'update_password': self.UpdatePassword,
-            'delete_password': self.DeletePassword
+            'delete_password': self.DeletePassword,
+
+            'password_analyzer': self.PasswordAnalyzer
         }
         self.service_obj = self.service_config[service_name].get_instance()
 
@@ -33,15 +42,25 @@ class ViewServices:
 
         return status_code, data
 
+    class RegisterAdminUser:
+        @staticmethod
+        def get_instance():
+            return RegisterAdminUserService()
+
+    class LoginAdminUser:
+        @staticmethod
+        def get_instance():
+            return LoginAdminUserService()
+
     class RegisterUser:
         @staticmethod
         def get_instance():
-            return RegisterUserService()
+            return RegisterService()
 
     class Login:
         @staticmethod
         def get_instance():
-            return LoginUserService()
+            return LoginService()
 
     class RefreshToken:
         @staticmethod

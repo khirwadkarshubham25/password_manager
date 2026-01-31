@@ -1,27 +1,31 @@
+from password_manager.commons.commons import Commons
 from password_manager.commons.generic_constants import GenericConstants
 from password_manager.commons.token_verifier import TokenVerifier
-from password_vault_manager.models import Users
+from password_manager.services.base_service import BaseService
 from rest_framework import status
 
-from password_vault_manager.services.service_helper.password_vault_manager_service_helper import \
-    PasswordVaultManagerServiceHelper
+from password_manager_admin.models import AdminUsers
+from password_vault_manager.models import Users
 
 
-class RefreshTokenService(PasswordVaultManagerServiceHelper):
+class RefreshTokenService(BaseService):
     def __init__(self):
         super().__init__()
 
     def get_request_params(self, *args, **kwargs):
         refresh_token = kwargs.get('data', {}).get('refresh_token', '').strip()
+        is_admin = kwargs.get('data', {}).get('is_admin', False)
 
         return {
-            'refresh_token': refresh_token
+            'refresh_token': refresh_token,
+            'is_admin': is_admin
         }
 
     def get_data(self, *args, **kwargs):
         params = self.get_request_params(*args, **kwargs)
 
         refresh_token = params.get('refresh_token')
+        is_admin = params.get('is_admin')
 
         if not refresh_token:
             self.set_status_code(status_code=status.HTTP_400_BAD_REQUEST)
@@ -40,7 +44,10 @@ class RefreshTokenService(PasswordVaultManagerServiceHelper):
                 self.set_status_code(status_code=status.HTTP_401_UNAUTHORIZED)
                 return {"message": GenericConstants.TOKEN_USER_ID_NOT_FOUND_ERROR_MESSAGE}
 
-            user = Users.objects.filter(id=user_id).first()
+            if is_admin:
+                user = AdminUsers.objects.filter(id=user_id).first()
+            else:
+                user = Users.objects.filter(id=user_id).first()
 
             if not user:
                 self.set_status_code(status_code=status.HTTP_404_NOT_FOUND)
@@ -52,12 +59,12 @@ class RefreshTokenService(PasswordVaultManagerServiceHelper):
                 'last_name': user.last_name,
             }
 
-            api_token, api_token_expiry = self.generate_jwt_token(
+            api_token, api_token_expiry = Commons.generate_jwt_token(
                 GenericConstants.API_TOKEN_TYPE,
                 api_payload
             )
 
-            refresh_token_new, refresh_token_expiry = self.generate_jwt_token(
+            refresh_token_new, refresh_token_expiry = Commons.generate_jwt_token(
                 GenericConstants.REFRESH_TOKEN_TYPE,
                 api_payload
             )
@@ -76,3 +83,6 @@ class RefreshTokenService(PasswordVaultManagerServiceHelper):
             return {
                 'message': GenericConstants.TOKEN_REFRESH_ERROR_MESSAGE
             }
+
+    def set_status_code(self, *args, **kwargs):
+        self.status_code = kwargs['status_code']

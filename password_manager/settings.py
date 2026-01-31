@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'password_manager_admin.apps.PasswordManagerAdminConfig',
     'password_vault_manager.apps.PasswordVaultManagerConfig',
 ]
 
@@ -135,3 +136,5 @@ CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() == 'true'
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_AGE = int(os.getenv('CSRF_COOKIE_AGE', '31449600'))
 CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+
+APPEND_SLASH = False
