@@ -3,7 +3,6 @@ import json
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
-from rest_framework.views import APIView
 
 from password_manager.commons.token_verifier import verify_token_required
 from password_manager.services.view_services import ViewServices
@@ -89,6 +88,17 @@ class ManagePassword(View):
             'data': data
         })
         service_obj = ViewServices(service_name='delete_password')
+        status_code, data = service_obj.execute_service(*args, **kwargs)
+        return JsonResponse(data, safe=False, status=status_code)
+
+class PasswordAnalyzer(View):
+    @verify_token_required
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        kwargs.update({
+            'data': data
+        })
+        service_obj = ViewServices(service_name='password_analyzer')
         status_code, data = service_obj.execute_service(*args, **kwargs)
         return JsonResponse(data, safe=False, status=status_code)
 
