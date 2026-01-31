@@ -305,7 +305,7 @@
 <body>
     <nav class="navbar">
         <a href="/" class="navbar-brand">Password Manager</a>
-        <a href="/users/login" class="navbar-link">Login</a>
+        <a href="/password_manager/login" class="navbar-link">Login</a>
     </nav>
 
     <div class="main-content">
@@ -366,7 +366,7 @@
             </form>
 
             <div class="login-link">
-                Already have an account? <a href="/users/login">Login here</a>
+                Already have an account? <a href="/password_manager/login">Login here</a>
             </div>
         </div>
     </div>
@@ -469,7 +469,7 @@
             };
 
             try {
-                const response = await fetch('/users/register', {
+                const response = await fetch('/password_manager/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -501,7 +501,7 @@
 
                     // Redirect after 2 seconds
                     setTimeout(() => {
-                        window.location.href = '/vault/dashboard';
+                        window.location.href = '/password_manager/dashboard';
                     }, 2000);
                 } else {
                     // Handle errors

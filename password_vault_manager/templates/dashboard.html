@@ -542,7 +542,7 @@
 
             if (!refreshToken) {
                 console.error('No refresh token available');
-                window.location.href = '/login';
+                window.location.href = '/password_manager/login';
                 return null;
             }
 
@@ -563,7 +563,7 @@
                 if (!response.ok) {
                     console.error('Token refresh failed:', result.message);
                     // Redirect to login if refresh fails
-                    window.location.href = '/login';
+                    window.location.href = '/password_manager/login';
                     return null;
                 }
 
@@ -578,7 +578,7 @@
 
             } catch (error) {
                 console.error('Error refreshing tokens:', error);
-                window.location.href = '/login';
+                window.location.href = '/password_manager/login';
                 return null;
             }
         }
@@ -593,7 +593,7 @@
                 console.log('API token expired or expiring soon, refreshing...');
                 token = await refreshTokens();
                 if (!token) {
-                    window.location.href = '/login';
+                    window.location.href = '/password_manager/login';
                     return null;
                 }
             }
@@ -613,7 +613,7 @@
 
             if (!firstName || !userId) {
                 // User not logged in, redirect to login
-                window.location.href = '/login';
+                window.location.href = '/password_manager/login';
             }
 
             return userId;
@@ -624,7 +624,7 @@
             // Clear localStorage
             localStorage.clear();
             // Redirect to login
-            window.location.href = '/login';
+            window.location.href = '/password_manager/login';
         }
 
         // Open add password modal
@@ -675,7 +675,7 @@
 
             if (!token) {
                 alert('Authentication failed. Please log in again.');
-                window.location.href = '/login';
+                window.location.href = '/password_manager/login';
                 return;
             }
 
@@ -708,7 +708,7 @@
 
         // Create new password
         async function createPassword(userId, email, platform, url, password, token) {
-            const response = await fetch('/manage_password', {
+            const response = await fetch('/password_manager/manage_password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -735,7 +735,7 @@
 
         // Update existing password
         async function updatePassword(passwordId, password, token) {
-            const response = await fetch('/manage_password', {
+            const response = await fetch('/password_manager/manage_password', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -774,7 +774,7 @@
                     }
                 }
 
-                const response = await fetch('/manage_password', {
+                const response = await fetch('/password_manager/manage_password', {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -812,7 +812,7 @@
                     }
                 }
 
-                const response = await fetch(`/manage_password?user_id=${userId}`, {
+                const response = await fetch(`/password_manager/manage_password?user_id=${userId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -852,7 +852,7 @@
                     }
                 }
 
-                const response = await fetch(`/manage_password?user_id=${userId}`, {
+                const response = await fetch(`/password_manager/manage_password?user_id=${userId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -938,7 +938,7 @@
             if (token) {
                 await loadPasswords(userId, token);
             } else {
-                window.location.href = '/login';
+                window.location.href = '/password_manager/login';
             }
         });
     </script>
