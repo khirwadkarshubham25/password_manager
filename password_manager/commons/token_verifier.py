@@ -125,8 +125,9 @@ class TokenVerifier:
 
         # Extract user_id
         user_id = result.get('user_id')
+        admin_user_id = result.get('admin_user_id')
 
-        if not user_id:
+        if not user_id and not admin_user_id:
             error_response = JsonResponse(
                 {'message': GenericConstants.TOKEN_USER_ID_NOT_FOUND_ERROR_MESSAGE},
                 status=status.HTTP_401_UNAUTHORIZED

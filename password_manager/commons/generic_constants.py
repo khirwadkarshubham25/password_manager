@@ -87,3 +87,5 @@ class GenericConstants:
 
     TOKEN_REFRESH_SUCCESS_MESSAGE = "Successfully refresh token"
     TOKEN_REFRESH_ERROR_MESSAGE = "Error in refreshing token"
+
+    INVALID_ADMIN_USER_ID = "Invalid Admin User ID"
