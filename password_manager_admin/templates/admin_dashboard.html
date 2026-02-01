@@ -1,0 +1,226 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Dashboard - Password Manager{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h2>Welcome to Admin Dashboard</h2>
+    <p>Manage your password manager system from here</p>
+</div>
+
+<div class="grid">
+    <div class="grid-item">
+        <div class="grid-item-icon">👥</div>
+        <h3>Users Management</h3>
+        <p>Manage system users, their roles, and permissions</p>
+        <a href="/admin/manage_users" class="grid-item-link">
+            Manage Users →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">🔐</div>
+        <h3>Password Policies</h3>
+        <p>Create and manage password policies and requirements</p>
+        <a href="/admin/policies/" class="grid-item-link">
+            Manage Policies →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">📋</div>
+        <h3>Policy Assignments</h3>
+        <p>Assign policies to users and manage access control</p>
+        <a href="/admin/assignments/" class="grid-item-link">
+            Manage Assignments →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">🔓</div>
+        <h3>Breach Databases</h3>
+        <p>Monitor and manage known breach databases</p>
+        <a href="/admin/breaches/" class="grid-item-link">
+            View Breaches →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">🔑</div>
+        <h3>Breached Hashes</h3>
+        <p>Review and analyze breached password hashes</p>
+        <a href="/admin/hashes/" class="grid-item-link">
+            View Hashes →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">⚠️</div>
+        <h3>Anomaly Alerts</h3>
+        <p>Review security alerts and suspicious activities</p>
+        <a href="/admin/alerts/" class="grid-item-link">
+            View Alerts →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">📊</div>
+        <h3>Audit Logs</h3>
+        <p>Access detailed system audit and security logs</p>
+        <a href="/admin/logs/" class="grid-item-link">
+            View Logs →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">⚙️</div>
+        <h3>Configurations</h3>
+        <p>Manage analyzer configurations and settings</p>
+        <a href="/admin/configurations/" class="grid-item-link">
+            Configure →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">📚</div>
+        <h3>Wordlists</h3>
+        <p>Manage dictionary wordlists for password analysis</p>
+        <a href="/admin/wordlists/" class="grid-item-link">
+            Manage Wordlists →
+        </a>
+    </div>
+
+    <div class="grid-item">
+        <div class="grid-item-icon">⌨️</div>
+        <h3>Keyboard Patterns</h3>
+        <p>Manage keyboard patterns for strength checking</p>
+        <a href="/admin/patterns/" class="grid-item-link">
+            Manage Patterns →
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .dashboard-header h2 {
+        color: #333;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .dashboard-header p {
+        color: #666;
+        font-size: 16px;
+        margin: 0;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .grid-item {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .grid-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .grid-item:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+        border-color: #667eea;
+    }
+
+    .grid-item-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+
+    .grid-item h3 {
+        color: #333;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        margin-top: 0;
+    }
+
+    .grid-item p {
+        color: #666;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .grid-item-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .grid-item-link:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateX(4px);
+    }
+
+    @media (max-width: 768px) {
+        .grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .dashboard-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .grid-item {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+        window.location.href = '/admin/login/';
+    }
+</script>
+{% endblock %}
