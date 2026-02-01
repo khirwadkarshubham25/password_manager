@@ -352,7 +352,7 @@
             <a href="/admin/admin_dashboard" class="navbar-link">Dashboard</a>
             <a href="/admin/manage_users" class="navbar-link">Users</a>
             <a href="/admin/manage_policies" class="navbar-link">Policies</a>
-            <a href="/admin/assignments/" class="navbar-link">Assignments</a>
+            <a href="/admin/manage_assignments" class="navbar-link">Assignments</a>
             <a href="/admin/breaches/" class="navbar-link">Breaches</a>
             <a href="/admin/logout/" class="navbar-link logout">Logout</a>
         </div>
@@ -450,7 +450,7 @@
             localStorage.removeItem('user_id');
             localStorage.removeItem('first_name');
             localStorage.removeItem('last_name');
-            window.location.href = '/admin/login/';
+            window.location.href = '/admin/login';
         }
     </script>
     {% block extra_js %}{% endblock %}
