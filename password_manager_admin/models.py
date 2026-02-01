@@ -1,8 +1,6 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
-from password_vault_manager.models import Users
-
 
 class AdminUsers(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -24,7 +22,6 @@ class PasswordPolicy(models.Model):
         (4, 'Very High - All 4 character types required'),
     ]
     id = models.BigAutoField(primary_key=True)
-    admin_users = models.ForeignKey(AdminUsers, on_delete=models.CASCADE, null=False)
     policy_name = models.CharField(max_length=255, unique=True)
     description = models.TextField()
     min_length = models.IntegerField(default=8, validators=[MinValueValidator(4)])
@@ -43,6 +40,7 @@ class PasswordPolicy(models.Model):
     exclude_email = models.BooleanField(default=True)
     special_chars_allowed = models.CharField(max_length=100, default="!@#$%^&*-_=+[]{}|;:,.<>?")
     special_chars_required = models.CharField(max_length=100, blank=True)
+    status = models.IntegerField(default=1, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -86,43 +84,6 @@ class PolicyViolation(models.Model):
 
     def __str__(self):
         return f"{self.violation_code} - {self.violation_name} ({self.severity})"
-
-
-class PolicyAssignment(models.Model):
-    """Link policies to users/groups"""
-    id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(
-        Users,
-        on_delete=models.CASCADE
-    )
-    policy = models.ForeignKey(
-        PasswordPolicy,
-        on_delete=models.CASCADE,
-        related_name='assignments'
-    )
-    effective_date = models.DateField()
-    expiry_date = models.DateField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    assigned_by = models.ForeignKey(
-        AdminUsers,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='assigned_policies'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "policy_assignment"
-        unique_together = ['user', 'policy']
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['user', 'is_active']),
-            models.Index(fields=['policy', 'is_active']),
-        ]
-
-    def __str__(self):
-        return f"{self.user.username} - {self.policy.policy_name}"
 
 class BreachDatabase(models.Model):
     AUTH_METHOD_CHOICES = [
@@ -312,7 +273,7 @@ class AnalyzerConfiguration(models.Model):
     value_type = models.CharField(max_length=20, choices=VALUE_TYPE_CHOICES, default='STRING')
     description = models.TextField(blank=True)
     is_sensitive = models.BooleanField(default=False)
-    admin_user = models.ForeignKey(AdminUsers, on_delete=models.SET_NULL, null=True, blank=True)
+    admin_user = models.ForeignKey(AdminUsers, on_delete=models.SET_DEFAULT, default=1, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
 
@@ -342,7 +303,6 @@ class DictionaryWordlist(models.Model):
     word_count = models.IntegerField(default=0)
     file_path = models.CharField(max_length=500)
     is_active = models.BooleanField(default=True)
-    admin_user = models.ForeignKey(AdminUsers, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
 
