@@ -339,6 +339,7 @@
 <div class="tabs">
     <button class="tab active" onclick="switchTab('databases')">Breach Databases</button>
     <button class="tab" onclick="switchTab('hibp')">HIBP Breaches</button>
+    <button class="tab" onclick="switchTab('hashes')">Breach Password Hashes</button>
 </div>
 
 <!-- Breach Databases Tab -->
@@ -418,6 +419,79 @@
             <h3>Click "Load Breaches" to fetch data from HIBP</h3>
         </div>
     </div>
+</div>
+
+<!-- Breach Password Hashes Tab -->
+<div id="hashes-tab" class="tab-content">
+    <div class="actions-bar">
+        <div class="search-box">
+            <input type="text" id="searchHashInput" placeholder="🔍 Search hashes...">
+        </div>
+        <div class="filter-group">
+            <label>Severity</label>
+            <select id="severityFilter">
+                <option value="">All</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Breach Source</label>
+            <select id="breachSourceFilter">
+                <option value="">All Sources</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="loadPasswordHashes()">
+            🔄 Apply Filters
+        </button>
+    </div>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label>Sort By</label>
+            <select id="sortByHashSelect" onchange="loadPasswordHashes()">
+                <option value="password_hash">Password Hash</option>
+                <option value="hash_format">Hash Format</option>
+                <option value="breach_source_name">Breach Source</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Order</label>
+            <select id="sortOrderHashSelect" onchange="loadPasswordHashes()">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Page Size</label>
+            <select id="pageSizeHashSelect" onchange="loadPasswordHashes()">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Password Hash</th>
+                <th>Hash Format</th>
+                <th>Breach Source</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="hashesBody">
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px;">Loading password hashes...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="pagination" id="hashesPagination"></div>
 </div>
 
 <!-- Create/Edit Database Modal -->
@@ -522,6 +596,67 @@
         </div>
     </div>
 </div>
+
+<!-- View Hash Details Modal -->
+<div id="hashDetailsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Password Hash Details</h2>
+            <button class="close" onclick="closeHashDetailsModal()">&times;</button>
+        </div>
+        <div id="hashDetailsContent"></div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeHashDetailsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Update Hash Modal -->
+<div id="updateHashModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Update Password Hash</h2>
+            <button class="close" onclick="closeUpdateHashModal()">&times;</button>
+        </div>
+        <form id="updateHashForm" onsubmit="saveHashUpdate(event)">
+            <input type="hidden" id="updateHashId">
+
+            <div class="form-group">
+                <label for="updateOccurrenceCount">Occurrence Count</label>
+                <input type="number" id="updateOccurrenceCount" min="1">
+            </div>
+
+            <div class="form-group">
+                <label for="updateSeverity">Severity</label>
+                <select id="updateSeverity">
+                    <option value="">Keep current</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                    <option value="CRITICAL">Critical</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="updateFirstSeenDate">First Seen Date</label>
+                <input type="date" id="updateFirstSeenDate">
+            </div>
+
+            <div class="form-group">
+                <label for="updateIsIndexed">Indexed Status</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="updateIsIndexed" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeUpdateHashModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Hash</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -568,6 +703,11 @@
         } else if (tab === 'hibp') {
             document.querySelector('.tab:nth-child(2)').classList.add('active');
             document.getElementById('hibp-tab').classList.add('active');
+        } else if (tab === 'hashes') {
+            document.querySelector('.tab:nth-child(3)').classList.add('active');
+            document.getElementById('hashes-tab').classList.add('active');
+            loadPasswordHashes();
+            loadBreachSources();
         }
     }
 
@@ -1093,5 +1233,321 @@
             day: 'numeric'
         });
     }
+let currentHashPage = 1;
+    let totalHashPages = 1;
+
+    // Load breach sources for filter dropdown
+    async function loadBreachSources() {
+        try {
+            const response = await fetch('/admin/breach-databases?page=1&page_size=100&sort_by=source_name&sort_order=asc', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Authorization': `Bearer ${getToken()}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.data) {
+                const select = document.getElementById('breachSourceFilter');
+                select.innerHTML = '<option value="">All Sources</option>' +
+                    data.data.map(db =>
+                        `<option value="${db.breach_database_id}">${db.source_name}</option>`
+                    ).join('');
+            }
+        } catch (error) {
+            console.error('Error loading breach sources:', error);
+        }
+    }
+
+    // Load password hashes
+    async function loadPasswordHashes(page = 1) {
+        try {
+            showLoading(true);
+            const sortBy = document.getElementById('sortByHashSelect').value;
+            const sortOrder = document.getElementById('sortOrderHashSelect').value;
+            const pageSize = document.getElementById('pageSizeHashSelect').value;
+            const severity = document.getElementById('severityFilter').value;
+            const breachSourceId = document.getElementById('breachSourceFilter').value;
+
+            const params = new URLSearchParams({
+                page: page.toString(),
+                page_size: pageSize,
+                sort_by: sortBy,
+                sort_order: sortOrder
+            });
+
+            if (severity) params.append('severity', severity);
+            if (breachSourceId) params.append('breach_source_id', breachSourceId);
+
+            const response = await fetch(`/admin/breached-hashes?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Authorization': `Bearer ${getToken()}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                displayPasswordHashes(data.data);
+                setupHashPagination(data.pagination);
+                currentHashPage = data.pagination.page;
+                totalHashPages = data.pagination.total_pages;
+            } else {
+                showAlert(data.message || 'Failed to load password hashes', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading password hashes:', error);
+            showAlert('Failed to load password hashes. Please try again.', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Display password hashes in table
+    function displayPasswordHashes(hashes) {
+        const tbody = document.getElementById('hashesBody');
+
+        if (!hashes || hashes.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <h3>No Password Hashes Found</h3>
+                            <p>Try adjusting your filters</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = hashes.map(hash => `
+            <tr>
+                <td>${hash.breach_hash_id}</td>
+                <td><code>${hash.password_hash.substring(0, 40)}${hash.password_hash.length > 40 ? '...' : ''}</code></td>
+                <td><span class="badge badge-verified">${hash.hash_format}</span></td>
+                <td>${hash.breach_source_name}</td>
+                <td>
+                    <button class="btn btn-info btn-sm" onclick="viewHashDetails(${hash.breach_hash_id})">
+                        👁️ View
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="openUpdateHashModal(${hash.breach_hash_id})">
+                        ✏️ Edit
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // View hash details
+    async function viewHashDetails(hashId) {
+        try {
+            const params = new URLSearchParams({
+                breach_hash_id: hashId.toString()
+            });
+
+            const response = await fetch(`/admin/breached-hash-details?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Authorization': `Bearer ${getToken()}`
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                const hash = result.data;
+                document.getElementById('hashDetailsContent').innerHTML = `
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Hash ID</label>
+                            <div class="value">${hash.breach_hash_id}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Password Hash</label>
+                            <div class="value"><code style="word-break: break-all;">${hash.password_hash}</code></div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Hash Format</label>
+                            <div class="value">${hash.hash_format}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Breach Source</label>
+                            <div class="value">${hash.breach_source_name}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Occurrence Count</label>
+                            <div class="value">${hash.occurrence_count.toLocaleString()}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Severity</label>
+                            <div class="value">
+                                <span class="status-badge ${hash.severity === 'CRITICAL' ? 'status-inactive' : hash.severity === 'HIGH' ? 'status-inactive' : 'status-active'}">
+                                    ${hash.severity}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <label>First Seen Date</label>
+                            <div class="value">${formatDate(hash.first_seen_date) || 'Unknown'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Indexed</label>
+                            <div class="value">${hash.is_indexed ? 'Yes' : 'No'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Created At</label>
+                            <div class="value">${formatDate(hash.created_at)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Last Updated</label>
+                            <div class="value">${formatDate(hash.updated_at)}</div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('hashDetailsModal').classList.add('active');
+            } else {
+                showAlert(result.message || 'Failed to load hash details', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading hash details:', error);
+            showAlert('Failed to load hash details. Please try again.', 'error');
+        }
+    }
+
+    // Open update hash modal
+    async function openUpdateHashModal(hashId) {
+        try {
+            const params = new URLSearchParams({
+                breach_hash_id: hashId.toString()
+            });
+
+            const response = await fetch(`/admin/breached-hash-details?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                const hash = result.data;
+                document.getElementById('updateHashId').value = hash.breach_hash_id;
+                document.getElementById('updateOccurrenceCount').value = hash.occurrence_count;
+                document.getElementById('updateSeverity').value = hash.severity;
+                document.getElementById('updateFirstSeenDate').value = hash.first_seen_date || '';
+                document.getElementById('updateIsIndexed').checked = hash.is_indexed;
+                document.getElementById('updateHashModal').classList.add('active');
+            } else {
+                showAlert(result.message || 'Failed to load hash', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading hash:', error);
+            showAlert('Failed to load hash. Please try again.', 'error');
+        }
+    }
+
+    // Save hash update
+    async function saveHashUpdate(event) {
+        event.preventDefault();
+
+        const hashId = document.getElementById('updateHashId').value;
+        const payload = {
+            breach_hash_id: hashId,
+            occurrence_count: parseInt(document.getElementById('updateOccurrenceCount').value) || null,
+            severity: document.getElementById('updateSeverity').value || null,
+            first_seen_date: document.getElementById('updateFirstSeenDate').value || null,
+            is_indexed: document.getElementById('updateIsIndexed').checked
+        };
+
+        try {
+            const response = await fetch('/admin/breached-hash-details', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showAlert(data.message, 'success');
+                closeUpdateHashModal();
+                loadPasswordHashes(currentHashPage);
+            } else {
+                showAlert(data.message || 'Failed to update hash', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating hash:', error);
+            showAlert('Failed to update hash. Please try again.', 'error');
+        }
+    }
+
+    // Setup hash pagination
+    function setupHashPagination(pagination) {
+        const paginationDiv = document.getElementById('hashesPagination');
+
+        paginationDiv.innerHTML = `
+            <button onclick="loadPasswordHashes(1)" ${pagination.page === 1 ? 'disabled' : ''}>
+                ⏮️ First
+            </button>
+            <button onclick="loadPasswordHashes(${pagination.page - 1})" ${pagination.page === 1 ? 'disabled' : ''}>
+                ◀️ Previous
+            </button>
+            <span style="padding: 8px 12px;">
+                Page ${pagination.page} of ${pagination.total_pages}
+                (${pagination.total} total)
+            </span>
+            <button onclick="loadPasswordHashes(${pagination.page + 1})" ${pagination.page === pagination.total_pages ? 'disabled' : ''}>
+                Next ▶️
+            </button>
+            <button onclick="loadPasswordHashes(${pagination.total_pages})" ${pagination.page === pagination.total_pages ? 'disabled' : ''}>
+                Last ⏭️
+            </button>
+        `;
+    }
+
+    // Close modals
+    function closeHashDetailsModal() {
+        document.getElementById('hashDetailsModal').classList.remove('active');
+    }
+
+    function closeUpdateHashModal() {
+        document.getElementById('updateHashModal').classList.remove('active');
+    }
+
+    // Update search setup to include hash search
+    const originalSetupSearch = setupSearch;
+    setupSearch = function() {
+        originalSetupSearch();
+
+        const searchHashInput = document.getElementById('searchHashInput');
+        let searchTimeout;
+
+        if (searchHashInput) {
+            searchHashInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const searchTerm = this.value.toLowerCase();
+                    const rows = document.querySelectorAll('#hashesBody tr');
+
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                }, 300);
+            });
+        }
+    };
 </script>
 {% endblock %}

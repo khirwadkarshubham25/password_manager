@@ -9,9 +9,13 @@ from password_manager_admin.services.delete_breach_database_service import Delet
 from password_manager_admin.services.delete_policy_service import DeletePolicyService
 from password_manager_admin.services.delete_user_service import DeleteUserService
 from password_manager_admin.services.get_assignment_details_service import GetAssignmentDetailsService
-from password_manager_admin.services.get_assignment_service import GetAssignmentsService
+from password_manager_admin.services.get_assignments_service import GetAssignmentsService
 from password_manager_admin.services.get_breach_database_details_service import GetBreachDatabaseDetailsService
 from password_manager_admin.services.get_breach_database_service import GetBreachDatabasesService
+from password_manager_admin.services.get_breach_details_service import GetBreachDetailsService
+from password_manager_admin.services.get_breached_hash_details_service import GetBreachedHashDetailsService
+from password_manager_admin.services.get_breached_hashes_service import GetBreachedHashesService
+from password_manager_admin.services.get_breaches_service import GetBreachesService
 from password_manager_admin.services.get_policies_service import GetPoliciesService
 from password_manager_admin.services.get_policy_details_service import GetPolicyDetailsService
 from password_manager_admin.services.get_users_service import GetUsersService
@@ -21,6 +25,7 @@ from password_manager_admin.services.login_admin_user_service import LoginAdminU
 from password_manager_admin.services.register_admin_user_service import RegisterAdminUserService
 from password_manager_admin.services.update_assignment_service import UpdateAssignmentService
 from password_manager_admin.services.update_breach_database_service import UpdateBreachDatabaseService
+from password_manager_admin.services.update_breached_hash_service import UpdateBreachedHashService
 from password_manager_admin.services.update_policy_service import UpdatePolicyService
 from password_manager_admin.services.update_user_service import UpdateUserService
 from password_vault_manager.services.create_password_service import CreatePasswordService
@@ -65,9 +70,12 @@ class ViewServices:
             'create_breach_database': self.CreateBreachDatabase,
             'update_breach_database': self.UpdateBreachDatabase,
             'delete_breach_database': self.DeleteBreachDatabase,
+            'get_breaches': self.GetBreaches,
+            'get_breach_details': self.GetBreachDetails,
 
             'get_breached_hashes': self.GetBreachedHashes,
             'get_breached_hash_details': self.GetBreachedHashDetails,
+            'update_breached_hash_details': self.UpdateBreachedHash,
 
             'get_audit_logs': self.GetAuditLogs,
             'get_audit_log_details': self.GetAuditLogDetails,
@@ -233,6 +241,16 @@ class ViewServices:
         def get_instance():
             return DeleteBreachDatabaseService()
 
+    class GetBreaches:
+        @staticmethod
+        def get_instance():
+            return GetBreachesService()
+
+    class GetBreachDetails:
+        @staticmethod
+        def get_instance():
+            return GetBreachDetailsService()
+
     class GetBreachedHashes:
         @staticmethod
         def get_instance():
@@ -242,6 +260,11 @@ class ViewServices:
         @staticmethod
         def get_instance():
             return GetBreachedHashDetailsService()
+
+    class UpdateBreachedHash:
+        @staticmethod
+        def get_instance():
+            return UpdateBreachedHashService()
 
     class GetAuditLogs:
         @staticmethod

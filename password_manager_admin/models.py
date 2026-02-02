@@ -85,6 +85,7 @@ class PolicyViolation(models.Model):
     def __str__(self):
         return f"{self.violation_code} - {self.violation_name} ({self.severity})"
 
+
 class BreachDatabase(models.Model):
     AUTH_METHOD_CHOICES = [
         ('NONE', 'No Authentication'),
@@ -98,18 +99,19 @@ class BreachDatabase(models.Model):
         ('SHA256', 'SHA-256'),
         ('MD5', 'MD5'),
     ]
+
     id = models.BigAutoField(primary_key=True)
     source_name = models.CharField(max_length=255, unique=True)
     source_url = models.URLField()
     total_hashes = models.BigIntegerField(default=0)
     last_updated = models.DateTimeField(null=True, blank=True)
     next_update_scheduled = models.DateTimeField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
     api_key = models.CharField(max_length=500, blank=True, null=True)
     authentication_method = models.CharField(max_length=20, choices=AUTH_METHOD_CHOICES, default='NONE')
     hash_format = models.CharField(max_length=20, choices=HASH_FORMAT_CHOICES, default='SHA1')
     description = models.TextField()
     data_storage_path = models.CharField(max_length=500, blank=True, null=True)
+    status = models.IntegerField(default=1, null=False, blank=False)  # ADD THIS LINE
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -117,12 +119,17 @@ class BreachDatabase(models.Model):
         db_table = "breach_database"
         ordering = ['-last_updated']
         indexes = [
-            models.Index(fields=['is_active']),
+            models.Index(fields=['status']),
             models.Index(fields=['source_name']),
         ]
 
     def __str__(self):
         return f"{self.source_name} - {self.total_hashes:,} hashes"
+
+
+from django.core.validators import MinValueValidator
+from django.db import models
+
 
 class BreachedPasswordHash(models.Model):
     SEVERITY_CHOICES = [
@@ -131,30 +138,54 @@ class BreachedPasswordHash(models.Model):
         ('HIGH', 'Found 101-1000 times'),
         ('CRITICAL', 'Found 1000+ times'),
     ]
+
+    HASH_FORMAT_CHOICES = [
+        ('SHA1', 'SHA-1'),
+        ('SHA256', 'SHA-256'),
+        ('MD5', 'MD5'),
+    ]
+
     id = models.BigAutoField(primary_key=True)
     password_hash = models.CharField(max_length=256, db_index=True)
-    hash_format = models.CharField(max_length=20, default='SHA1')
-    breach_source = models.ForeignKey(BreachDatabase, on_delete=models.CASCADE)
+    hash_format = models.CharField(max_length=20, choices=HASH_FORMAT_CHOICES, default='SHA1')
+    breach_database = models.ForeignKey(BreachDatabase, on_delete=models.CASCADE)
     occurrence_count = models.IntegerField(default=1, validators=[MinValueValidator(1)])
-    first_seen_date = models.DateField()
+    first_seen_date = models.DateField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
     severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='LOW')
     is_indexed = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)  # FIXED: Changed from auto_now_add to auto_now
 
     class Meta:
         db_table = "breached_password_hash"
-        unique_together = ['password_hash', 'breach_source']
+        unique_together = ['password_hash', 'breach_database']
         ordering = ['-occurrence_count']
         indexes = [
             models.Index(fields=['password_hash']),
-            models.Index(fields=['breach_source', 'occurrence_count']),
+            models.Index(fields=['breach_database', 'occurrence_count']),
             models.Index(fields=['severity']),
-        ]
+        ]  # FIXED: Added closing bracket
 
     def __str__(self):
-        return f"Hash: {self.password_hash[:16]}... ({self.occurrence_count} occurrences)"
+        return f"{self.password_hash[:10]}... ({self.occurrence_count} occurrences)"
+
+    def calculate_severity(self):
+        """Auto-calculate severity based on occurrence count"""
+        if self.occurrence_count >= 1000:
+            return 'CRITICAL'
+        elif self.occurrence_count >= 101:
+            return 'HIGH'
+        elif self.occurrence_count >= 11:
+            return 'MEDIUM'
+        else:
+            return 'LOW'
+
+    def save(self, *args, **kwargs):
+        """Auto-calculate severity before saving"""
+        if not self.severity or self.severity == 'LOW':
+            self.severity = self.calculate_severity()
+        super().save(*args, **kwargs)
 
 
 class AdminSecurityAuditLog(models.Model):

@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from password_manager_admin.models import AdminUsers, PasswordPolicy
+
 
 class Users(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -182,6 +184,39 @@ class PasswordStrengthMetrics(models.Model):
             f"{self.breached_percentage:.1f}% were found in breach databases."
         )
 
+class PolicyAssignment(models.Model):
+    """Link policies to users/groups"""
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(
+        Users,
+        on_delete=models.CASCADE
+    )
+    password_policy = models.ForeignKey(
+        PasswordPolicy,
+        on_delete=models.CASCADE
+    )
+    effective_date = models.DateField(auto_now_add=True)
+    expiry_date = models.DateField(blank=True, null=True)
+    status = models.IntegerField(default=1, null=False, blank=False)
+    admin_user = models.ForeignKey(
+        AdminUsers,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "policy_assignment"
+        unique_together = ['user', 'password_policy']
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['password_policy', 'status']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.password_policy.policy_name}"
 
 class BreachCheckLog(models.Model):
     STATUS_CHOICES = [
