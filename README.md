@@ -1,38 +1,56 @@
 # 🔐 Password Manager
 
-A secure, full-stack password management application built with Django. Store, manage, and retrieve passwords with enterprise-grade encryption.
+A secure, full-stack enterprise password management system built with Django. Features a user-facing vault for storing and managing credentials, and a fully separate admin panel for managing users, roles, policies, breach databases, and audit logs.
+
+---
 
 ## ✨ Features
 
-✅ **User Authentication**
-- User registration with email validation
-- Secure JWT login with token refresh
-- Automatic session management (up to 60 minutes)
-- No re-login needed during session
+### 👤 User Authentication
+- Email-based registration with validation
+- Secure JWT login with automatic token refresh
+- Sessions up to 60 minutes with silent auto-refresh
+- Role-based access control (Admin / User)
 
-✅ **Password Management**
+### 🔑 Password Vault (Users)
 - Create, read, update, delete passwords (CRUD)
-- Store platform, email, URL, and password
-- Copy-to-clipboard functionality
-- Real-time statistics
+- Store platform, email, URL, and encrypted password
+- Copy-to-clipboard — password never displayed on screen
+- Auto-generate secure passwords based on assigned policy
+- Policy violation warnings on save (without blocking)
+- Breach detection warnings on save (without blocking)
+- Password history tracking to prevent reuse
 
-✅ **Security** 
-- PBKDF2 + Fernet encryption for passwords
-- JWT authentication (20-minute tokens, 60-minute refresh)
-- CSRF protection on all requests
-- XSS prevention with HTML escaping
-- HTTPS/TLS ready for production
+### 🛡️ Admin Panel
+- **User Management** — create, update, delete users; assign roles
+- **Role Management** — create and manage roles
+- **Password Policies** — define complexity, length, entropy, history rules
+- **Policy Assignments** — assign policies to individual users
+- **Breach Databases** — manage breach sources (currently HIBP; additional databases planned)
+- **Breached Hashes** — view and query breached password hashes
+- **Policy Violations** — view per-user violation history with full details
+- **Audit Logs** — immutable log of all admin actions
+
+### 🔒 Security
+- **Application-layer encryption** — Fernet (AES-128 CBC) + PBKDF2/SHA-256
+- **JWT authentication** — 20-minute access tokens, 60-minute refresh tokens
+- **k-Anonymity breach checking** — HIBP integration (only first 5 SHA-1 chars sent; additional breach sources planned)
+- **Policy enforcement** — length, complexity, entropy, personal info, history checks
+- **CSRF protection** on all state-changing requests
+- **XSS prevention** with HTML escaping
+- **HTTPS/TLS ready** for production
 
 ---
 
 ## 🛠 Tech Stack
 
 | Component | Technology |
-|-----------|-----------|
+|---|---|
 | **Backend** | Django 4.x, Django REST Framework |
-| **Authentication** | PyJWT (JWT tokens) |
-| **Encryption** | Fernet + PBKDF2 |
-| **Database** | SQLite3 (dev), PostgreSQL (prod) |
+| **Authentication** | PyJWT (HS256 JWT tokens) |
+| **Encryption** | Fernet + PBKDF2/SHA-256 |
+| **Breach Detection** | HIBP k-Anonymity API (additional sources planned) |
+| **Database** | SQLite3 (dev) · PostgreSQL (prod) |
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript |
 | **Server** | Gunicorn (production) |
 
@@ -40,7 +58,7 @@ A secure, full-stack password management application built with Django. Store, m
 
 ## 📋 Prerequisites
 
-- **Python 3.8+**
+- **Python 3.10+**
 - **pip** package manager
 - **Git** for version control
 - **Modern web browser**
@@ -49,125 +67,147 @@ A secure, full-stack password management application built with Django. Store, m
 
 ## 🚀 Quick Start
 
-### 1. Clone & Setup
+### 1. Clone & Set Up Environment
 ```bash
 git clone https://github.com/yourusername/password-manager.git
 cd password-manager
 python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate       # Windows: venv\Scripts\activate
 ```
 
-### 2. Install & Configure
+### 2. Install Dependencies & Configure
 ```bash
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your settings
+# Edit .env with your settings (see Configuration section below)
 ```
 
-### 3. Initialize Database
+### 3. Generate Fernet Encryption Key
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# Paste the output into ENCRYPTION_KEY in your .env
+```
+
+### 4. Run Migrations & Start Server
 ```bash
 python manage.py migrate
 python manage.py runserver
 ```
 
-Visit: `http://localhost:8000`
+| Interface | URL |
+|---|---|
+| User Login | `http://localhost:8000/accounts/login` |
+| User Register | `http://localhost:8000/accounts/register` |
+| User Vault | `http://localhost:8000/vault/dashboard` |
+| Admin Panel | `http://localhost:8000/admin-panel/admin-dashboard` |
 
 ---
 
 ## 💻 Usage
 
-### Register
-1. Navigate to `/register`
-2. Create account with username, email, password
-3. Password must be 8+ characters with complexity
+### Register & Login
+1. Navigate to `/accounts/register`
+2. Create an account with first name, last name, email, and password
+3. Login at `/accounts/login` — tokens are stored in `localStorage` automatically
+4. Sessions last up to 60 minutes with silent auto-refresh
 
-<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-22-31" src="https://github.com/user-attachments/assets/b61b6430-1f8e-44d9-9c53-4a6b0a3a9a2d" />
+### User Vault
+- **Add Password** — Click "Add Password" → Fill platform, URL, email, password → Save
+- **Generate Password** — Click ⚡ in the modal to auto-generate based on your assigned policy
+- **Copy Password** — Click "Copy" on any row — password never appears on screen
+- **Edit** — Click "Edit" → Update any field → Save (policy + breach checks run again)
+- **Delete** — Click "Delete" → Confirm
 
+Policy violations and breach warnings appear **inline after saving** — the entry is always saved regardless, but warnings are shown so users can take action.
 
----
-
-### Login
-1. Go to `/login`
-2. Enter credentials
-3. Tokens stored in localStorage automatically
-4. Session lasts up to 60 minutes with auto-refresh
-
-<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-23-31" src="https://github.com/user-attachments/assets/667f6600-ec76-4640-a7c1-5f5f6911be21" />
-
-
----
-
-### Manage Passwords
-- **Add:** Click "Add New Password" → Fill form → Save
-- **Edit:** Click "Edit" → Change password only → Update
-- **Copy:** Click "Copy" → Password in clipboard
-- **Delete:** Click "Delete" → Confirm
-
-<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-24-17" src="https://github.com/user-attachments/assets/f938d3e0-b15e-4b64-8e89-93b76e61d339" />
-
-<img width="1916" height="956" alt="Screenshot from 2026-01-25 01-24-41" src="https://github.com/user-attachments/assets/9247d44c-bb19-4e7d-9baa-87c867d594a8" />
-
-<img width="1916" height="956" alt="image" src="https://github.com/user-attachments/assets/0fd298f6-c4c9-4c2b-afe9-99ebf1ee32b9" />
-
-
----
-
-### Logout
-Click "Logout" → Tokens cleared → Redirected to login
+### Admin Panel
+1. Login with an admin account (role_id = 1)
+2. Manage users, assign policies, configure breach databases
+3. Monitor policy violations and audit logs
 
 ---
 
 ## 📡 API Endpoints
 
-### Authentication
-```bash
-POST /register
-{
-    "username": "john_doe",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john@example.com",
-    "password": "SecurePass123!"
-}
+All API endpoints require `Authorization: Bearer <api_token>` unless noted.
 
-POST /login
-{
-    "username": "john_doe",
-    "password": "SecurePass123!"
-}
-Response: api_token, refresh_token, expiry times
-
-POST /refresh_token
-{
-    "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
-}
-Response: new api_token, new refresh_token
+### 🔑 Authentication — `/accounts/`
+```
+POST   /accounts/api/login              Login, returns api_token + refresh_token
+POST   /accounts/api/register           Register new user
 ```
 
-### Password Management
-```bash
-GET /manage_password?user_id=1
-Authorization: Bearer <api_token>
+### 🏛️ Admin — `/admin-panel/`
 
-POST /manage_password
-{
-    "user_id": 1,
-    "platform": "Gmail",
-    "email": "user@gmail.com",
-    "url": "https://mail.google.com",
-    "password": "encrypted_password"
-}
+**Users**
+```
+GET    /admin-panel/api/users                  List users (paginated, sortable)
+POST   /admin-panel/api/users                  Create user
+PUT    /admin-panel/api/users                  Update user
+DELETE /admin-panel/api/users                  Delete user
+GET    /admin-panel/api/user-details           Get user details
+```
 
-PUT /manage_password
-{
-    "user_password_id": 1,
-    "password": "new_password"
-}
+**Roles**
+```
+GET    /admin-panel/api/roles                  List roles
+POST   /admin-panel/api/roles                  Create role
+PUT    /admin-panel/api/roles                  Update role
+DELETE /admin-panel/api/roles                  Delete role
+```
 
-DELETE /manage_password
-{
-    "user_password_id": 1
-}
+**Password Policies**
+```
+GET    /admin-panel/api/policies               List policies (paginated)
+POST   /admin-panel/api/policies               Create policy
+PUT    /admin-panel/api/policies               Update policy
+DELETE /admin-panel/api/policies               Delete policy
+GET    /admin-panel/api/policy-details         Get policy details
+```
+
+**Policy Assignments**
+```
+GET    /admin-panel/api/assignments            List assignments
+POST   /admin-panel/api/assignments            Assign policy to user
+PUT    /admin-panel/api/assignments            Update assignment
+DELETE /admin-panel/api/assignments            Remove assignment
+GET    /admin-panel/api/assignment-details     Get assignment details
+```
+
+**Breach Databases**
+```
+GET    /admin-panel/api/breach-databases       List breach databases
+POST   /admin-panel/api/breach-databases       Add breach database
+PUT    /admin-panel/api/breach-databases       Update breach database
+DELETE /admin-panel/api/breach-databases       Delete breach database
+GET    /admin-panel/api/breach-database-details  Get details
+```
+
+**Breached Hashes**
+```
+GET    /admin-panel/api/breached-hashes        List breached hashes (read-only)
+GET    /admin-panel/api/breached-hash-details  Get hash details (read-only)
+```
+
+**Policy Violations**
+```
+GET    /admin-panel/api/policy-violations      List user violations (filterable by user, severity, category)
+GET    /admin-panel/api/policy-violation-details  Get violation details
+```
+
+**Audit Logs**
+```
+GET    /admin-panel/api/audit-logs             List audit logs (read-only)
+GET    /admin-panel/api/audit-log-details      Get log details (read-only)
+```
+
+### 🔐 Vault — `/vault/`
+```
+GET    /vault/api/user-passwords               List user's passwords (paginated, searchable)
+POST   /vault/api/user-passwords               Create password entry
+PUT    /vault/api/user-passwords               Update password entry
+DELETE /vault/api/user-passwords               Delete password entry
+GET    /vault/api/generate-password            Generate password based on assigned policy
 ```
 
 ---
@@ -175,119 +215,63 @@ DELETE /manage_password
 ## 🔐 Security Features
 
 ### Encryption
-- **Algorithm:** Fernet (AES-128 in CBC mode)
-- **Master Password:** PBKDF2 hashed with SHA256
-- **Password Storage:** Encrypted in database
-- **Decryption:** Only for authenticated users
+- **Algorithm:** Fernet (AES-128 in CBC mode with HMAC-SHA256)
+- **Key Derivation:** PBKDF2/SHA-256 with 100,000 iterations
+- **Per-user encryption:** Passwords encrypted using each user's hashed master password
+- **Decryption:** Only possible for the authenticated user
 
 ### Authentication
-- **JWT Tokens:** HS256 signed with SECRET_KEY
-- **API Token:** 20 minutes (short-lived)
-- **Refresh Token:** 60 minutes (longer-lived)
-- **Auto-Refresh:** Tokens refreshed automatically in background
+- **JWT Tokens:** HS256 signed with `SECRET_KEY`
+- **API Token:** 20-minute lifetime (short-lived access)
+- **Refresh Token:** 60-minute lifetime (session duration)
+- **Auto-Refresh:** Tokens refreshed silently in the background
 - **Token Rotation:** New tokens issued on each refresh (prevents reuse)
 
-### CSRF Protection
-- CSRF token required for all state-changing requests
-- Token regenerated on each request
-- SameSite=Lax cookie attribute
+### Breach Detection
+- **HIBP k-Anonymity:** Only the first 5 characters of the SHA-1 hash are sent to HIBP — the full hash never leaves the server
+- **Local caching:** Breached hashes stored in `BreachedPasswordHash` table; subsequent checks skip the live API call
+- **Extensible architecture:** The `BreachDatabase` model and `CreateBreachedPasswordHashService` are designed to support additional breach sources — custom databases with API_KEY and BASIC authentication are already modelled and planned for a future release
 
-### XSS Prevention
-- HTML content escaped
-- Input validation on all fields
-- Content-Type headers set properly
+### Policy Enforcement
+Every password save (create or update) checks:
 
-### Production Security
-- Enable HTTPS/SSL
-- Set DEBUG=False
-- Configure CSRF_COOKIE_SECURE=True
-- Use strong SECRET_KEY (50+ characters)
-- Configure ALLOWED_HOSTS to specific domains
-- Use PostgreSQL instead of SQLite
+| Rule | Violation Code |
+|---|---|
+| Minimum / maximum length | `PWD_TOO_SHORT` / `PWD_TOO_LONG` |
+| Uppercase required | `PWD_NO_UPPERCASE` |
+| Lowercase required | `PWD_NO_LOWERCASE` |
+| Digits required | `PWD_NO_DIGIT` |
+| Special characters required | `PWD_NO_SPECIAL_CHAR` |
+| Minimum complexity types | `PWD_LOW_COMPLEXITY` |
+| Shannon entropy threshold | `PWD_LOW_ENTROPY` |
+| Contains email address | `PWD_CONTAINS_EMAIL` |
+| Contains user's name | `PWD_CONTAINS_NAME` |
+| Recently used (history) | `PWD_REUSED` |
+
+Violations are **warned, not blocked** — entries are always saved, but violations are recorded in `PolicyViolation` and returned in the API response.
 
 ---
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### Environment Variables (`.env`)
 ```env
-# Required
-SECRET_KEY=your-super-secret-key-minimum-64-chars
-DEBUG=False (production)
-ALLOWED_HOSTS=example.com,www.example.com
+# Django core
+DJANGO_SECRET_KEY=your-super-secret-key-minimum-64-chars
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=example.com,www.example.com
 
-# Security
-CSRF_TRUSTED_ORIGINS=https://example.com,https://www.example.com
-CSRF_COOKIE_SECURE=True (production)
-CSRF_COOKIE_SAMESITE=Strict (production)
+# Application-layer encryption key (generate with Fernet.generate_key())
+ENCRYPTION_KEY=your-fernet-key-here
 
-# Database
+# Production security
+CSRF_TRUSTED_ORIGINS=https://example.com
+CSRF_COOKIE_SECURE=True
+CSRF_COOKIE_SAMESITE=Strict
+
+# Database (production)
 DATABASE_URL=postgresql://user:password@localhost/dbname
 ```
-
-### Token Expiry
-```python
-API_TOKEN_EXPIRY = 20 minutes  # Access token
-REFRESH_TOKEN_EXPIRY = 60 minutes  # Session duration
-```
-
-Modify in: `password_manager/commons/generic_constants.py`
-
----
-
-## 🧪 Testing
-
-### Manual Testing
-```bash
-# Test token refresh
-1. Login → Wait 20+ minutes
-2. Click any operation → Token refreshes automatically
-3. Check browser console: "API token expired or expiring soon, refreshing..."
-
-# Test CSRF protection
-curl -X POST http://localhost:8000/manage_password \
-  -H "Authorization: Bearer <token>"
-# Should fail: 403 CSRF token missing
-
-# Test XSS prevention
-Try to inject: <script>alert('xss')</script>
-# Should be escaped/sanitized
-
-# Test authentication
-curl http://localhost:8000/dashboard
-# Should redirect to /login
-```
-
----
-
-## 🔐 Security Best Practices
-
-### For Users
-- Never share your password with anyone
-- Use unique, strong passwords
-- Keep your browser updated
-- Use HTTPS connections only
-- Don't use on public/shared computers
-
-### For Developers
-- Never commit `.env` file
-- Generate new SECRET_KEY for production
-- Use environment variables for secrets
-- Keep dependencies updated
-- Run security tests regularly
-
-### Reporting Security Issues
-**Do NOT create public issues for security vulnerabilities.**
-
-Email: `security@example.com`
-
-Include:
-- Description of vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
-
-Response time: 48 hours
 
 ---
 
@@ -295,124 +279,186 @@ Response time: 48 hours
 
 ```
 password-manager/
-├── password_manager/              # Main Django project
-│   ├── settings.py               # Configuration (env vars)
-│   ├── urls.py
-│   └── services/
-│       └── view_services.py      # Service factory
-│
-├── password_vault_manager/        # Main app
-│   ├── models.py                 # Database models
-│   ├── views.py                  # Django views
-│   ├── urls.py
-│   ├── services/                 # Business logic
-│   │   ├── register_user_service.py
-│   │   ├── login_user_service.py
-│   │   ├── refresh_token_service.py
-│   │   ├── crypto_service.py
-│   │   └── password_*.py
-│   ├── utils/
-│   │   └── token_verifier.py    # JWT validation
-│   ├── validators/
-│   │   ├── email_validator.py
-│   │   ├── password_validator.py
-│   │   └── username_validator.py
-│   └── templates/
-│       ├── register.html
-│       ├── login.html
-│       └── dashboard.html
-│
+├── manage.py
+├── requirements.txt
 ├── .env.example
 ├── .gitignore
-├── requirements.txt
-├── README.md
-├── SECURITY.md
-├── CONTRIBUTING.md
-└── manage.py
+│
+├── password_manager/                  # Django project config
+│   ├── settings.py
+│   ├── urls.py
+│   ├── commons/
+│   │   ├── generic_constants.py       # App-wide constants & messages
+│   │   ├── commons.py                 # Shared utilities
+│   │   └── token_verifier.py          # JWT validation decorator
+│   └── services/
+│       ├── base_service.py            # Abstract base service
+│       ├── crypto_service.py          # Fernet + PBKDF2 encryption
+│       └── view_services.py           # Service registry / factory
+│
+├── accounts/                          # Auth app
+│   ├── models.py                      # Users, Role, UserProfile
+│   ├── views.py
+│   ├── urls.py
+│   ├── services/
+│   │   ├── login_user_service.py
+│   │   ├── register_user_service.py
+│   │   └── service_helper/
+│   └── templates/
+│       ├── login.html
+│       └── register.html
+│
+├── admin_panel/                       # Admin management app
+│   ├── models.py                      # AuditLog, PasswordPolicy, PolicyAssignment,
+│   │                                  # PolicyViolation, BreachDatabase, BreachedPasswordHash
+│   ├── views.py
+│   ├── urls.py
+│   ├── services/
+│   │   ├── create_user_service.py
+│   │   ├── create_policy_service.py
+│   │   ├── create_assignment_service.py
+│   │   ├── create_breach_database_service.py
+│   │   ├── get_policy_violations_service.py
+│   │   ├── get_audit_logs_service.py
+│   │   └── ...                        # Full CRUD services for each model
+│   └── templates/
+│       ├── admin_base.html
+│       ├── dashboard.html
+│       ├── users.html
+│       ├── roles.html
+│       ├── policies.html
+│       ├── assignment.html
+│       ├── breach.html
+│       ├── policy_violations.html
+│       └── audit_logs.html
+│
+└── vault/                             # User password vault app
+    ├── models.py                      # UserPasswords, UserPasswordHistory
+    ├── views.py
+    ├── urls.py
+    ├── services/
+    │   ├── create_user_password_service.py
+    │   ├── update_user_password_service.py
+    │   ├── delete_user_password_service.py
+    │   ├── get_user_passwords_service.py
+    │   ├── generate_password_service.py
+    │   ├── create_breached_password_hash_service.py
+    │   ├── create_password_policy_violation_service.py
+    │   └── service_helper/
+    └── templates/
+        └── dashboard.html
 ```
 
 ---
 
-## 🤝 Contributing
+## 🧪 Testing
 
-### Setup Development Environment
+### Manual Testing
 ```bash
-git clone <your-fork>
-cd password-manager
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+# Verify migrations
+python manage.py migrate
+
+# Test authentication flow
+# 1. Register at /accounts/register
+# 2. Login at /accounts/login
+# 3. Check localStorage for api_token and refresh_token
+
+# Test breach detection
+# Create a password entry using a known breached password (e.g. "password123")
+# Response should include breach_warning with source details
+
+# Test policy violation
+# Create an entry with a weak password (e.g. "abc")
+# Response should include policy_warning listing each violation
+
+# Test token auto-refresh
+# Login → wait 20+ minutes → perform any vault action
+# Token refreshes silently; check browser console for refresh logs
+
+# Test CSRF protection
+curl -X POST http://localhost:8000/accounts/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"test"}'
+# Should succeed (CSRF exempt on API endpoints)
+
+# Test auth guard
+curl http://localhost:8000/vault/api/user-passwords
+# Should return 401 Unauthorized
 ```
-
-### Code Style
-- **Python:** PEP 8 (use `black` formatter)
-- **JavaScript:** ES6+, semicolons optional
-- **Git commits:** Use imperative mood with emoji
-  - ✨ New feature
-  - 🐛 Bug fix
-  - 📚 Documentation
-  - 🔐 Security improvement
-
-### Pull Request Process
-1. Fork repository
-2. Create feature branch: `git checkout -b feature/your-feature`
-3. Make changes and test
-4. Commit: `git commit -m "✨ Add: feature description"`
-5. Push: `git push origin feature/your-feature`
-6. Create Pull Request with detailed description
 
 ---
 
 ## 🆘 Troubleshooting
 
-### Token Refresh Not Working
-- Verify CSRF token in meta tag
-- Check refresh_token in localStorage
-- Clear browser cookies and retry
-- Check `/refresh_token` endpoint is accessible
+### Passwords Won't Decrypt
+- Verify `ENCRYPTION_KEY` in `.env` has not changed since the passwords were saved
+- Fernet keys are 44-character base64 strings — regenerating one invalidates all existing encrypted data
+
+### Migration Errors
+```bash
+python manage.py showmigrations      # Check migration state
+python manage.py migrate --run-syncdb
+```
 
 ### CSRF Token Mismatch
-- Ensure CSRF token is current
-- Check CSRF_TRUSTED_ORIGINS setting
-- Verify CSRF_COOKIE_SECURE matches protocol
+- Verify `CSRF_TRUSTED_ORIGINS` includes your domain
+- Check `CSRF_COOKIE_SECURE=True` only when serving over HTTPS
 - Clear cookies and retry
 
-### Login Fails
-- Verify database migrations ran: `python manage.py migrate`
-- Check username/password are correct
-- Check database has the user
-- Check server logs for errors
-
-### Password Won't Decrypt
-- Verify SECRET_KEY hasn't changed
-- Check encryption service is functioning
-- Ensure database hasn't been corrupted
-- Try re-adding the password
+### Breach Check Fails
+- HIBP requires internet access — verify outbound requests are not blocked
+- Check `requests` is installed: `pip install requests`
+- If you have configured additional breach databases, verify their `source_url` and authentication credentials in the admin panel
 
 ---
 
-## 📄 License
+## 🔐 Security Best Practices
 
-MIT License - See [LICENSE](LICENSE) file
+### For Users
+- Use the ⚡ Generate button — it creates passwords that comply with your assigned policy
+- Never reuse passwords across platforms
+- Use HTTPS connections only
+- Log out on shared or public computers
+
+### For Developers
+- Never commit `.env` to version control
+- Generate a fresh `SECRET_KEY` and `ENCRYPTION_KEY` for every deployment
+- Set `DJANGO_DEBUG=False` in production
+- Use PostgreSQL in production (not SQLite)
+- Run `pip install --upgrade -r requirements.txt` regularly
+
+### Reporting Security Issues
+**Do NOT create public GitHub issues for security vulnerabilities.**
+
+Email: `security@example.com`
+
+Please include: description, steps to reproduce, potential impact, and suggested fix.
+Response time: 48 hours.
 
 ---
 
 ## 🎯 Roadmap
 
 ### v1.0 (Current) ✅
-- User authentication ✓
-- Password CRUD ✓
-- JWT token refresh ✓
-- CSRF protection ✓
+- User authentication & JWT sessions ✓
+- Password vault with full CRUD ✓
+- Fernet application-layer encryption ✓
+- Policy engine (length, complexity, entropy, history, personal info) ✓
+- HIBP breach detection with k-Anonymity ✓
+- Admin panel (users, roles, policies, assignments, breaches, violations, audit logs) ✓
+- Password generation based on assigned policy ✓
 
 ### v1.1 (Planned)
-- Password strength meter
-- Two-factor authentication
-- Audit logs
-- Password sharing
+- Two-factor authentication (TOTP)
+- Password strength meter in vault UI
+- Email notifications for breach detections
+- Bulk policy assignment
+- Dictionary word detection
+- Keyboard pattern detection (e.g. `qwerty`, `123456`)
+- Additional breach database integrations (custom APIs beyond HIBP)
 
 ### v2.0 (Future)
-- Mobile app (iOS/Android)
 - Browser extension
-- Team collaboration
-- Advanced encryption options
+- Mobile app (iOS / Android)
+- Team / organisation vaults
+- Advanced anomaly detection
