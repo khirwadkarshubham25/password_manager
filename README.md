@@ -50,7 +50,7 @@ A secure, full-stack enterprise password management system built with Django. Fe
 | **Authentication** | PyJWT (HS256 JWT tokens) |
 | **Encryption** | Fernet + PBKDF2/SHA-256 |
 | **Breach Detection** | HIBP k-Anonymity API (additional sources planned) |
-| **Database** | SQLite3 (dev) · PostgreSQL (prod) |
+| **Database** | SQLite3 (dev) |
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript |
 | **Server** | Gunicorn (production) |
 
@@ -269,8 +269,6 @@ CSRF_TRUSTED_ORIGINS=https://example.com
 CSRF_COOKIE_SECURE=True
 CSRF_COOKIE_SAMESITE=Strict
 
-# Database (production)
-DATABASE_URL=postgresql://user:password@localhost/dbname
 ```
 
 ---
