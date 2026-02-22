@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Vault - Password Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand::before { content: '🔐'; font-size: 28px; }
+
+        .navbar-nav { display: flex; gap: 1rem; align-items: center; }
+
+        .navbar-user {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 15px;
+        }
+
+        .navbar-link.logout {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-link.logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+        }
+
+        /* Layout */
+        .container {
+            flex: 1;
+            width: 100%;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 15px;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            display: none;
+            border: 1px solid;
+        }
+
+        .alert.success { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .alert.error   { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .alert.info    { background: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+
+        /* Loading */
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px; height: 30px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Page header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .page-header h2 { color: #333; font-size: 1.8rem; margin: 0; }
+        .page-subtitle  { font-size: 13px; color: #888; margin-top: 4px; }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            border-left: 4px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon { font-size: 24px; }
+        .stat-label { font-size: 12px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 22px; font-weight: 700; color: #333; }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+
+        .filter-group select,
+        .search-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .filter-group select:focus,
+        .search-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .search-group {
+            display: flex; flex-direction: column; gap: 5px;
+            flex: 1; min-width: 200px; max-width: 300px;
+        }
+
+        .search-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+
+        /* Buttons */
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        button:active { transform: translateY(0); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; box-shadow: 0 5px 20px rgba(108,117,125,0.4); }
+
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; box-shadow: 0 5px 20px rgba(220,53,69,0.4); }
+
+        .btn-add {
+            padding: 8px 18px;
+            font-size: 14px;
+            margin-left: auto;
+            align-self: flex-end;
+        }
+
+        /* Action buttons in table */
+        .btn-view   { background: #6f42c1; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+        .btn-edit   { background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+        .btn-delete-sm { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+
+        .btn-view:hover   { background: #5a32a3; transform: translateY(-1px); box-shadow: none; }
+        .btn-edit:hover   { background: #0056b3; transform: translateY(-1px); box-shadow: none; }
+        .btn-delete-sm:hover { background: #c82333; transform: translateY(-1px); box-shadow: none; }
+
+        /* Table */
+        .table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .table th { background: #f8f9fa; padding: 12px 15px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; color: #333; }
+        .table td { padding: 12px 15px; border-bottom: 1px solid #dee2e6; }
+        .table tr:hover { background: #f8f9fa; }
+
+        /* Copy button */
+        .btn-copy {
+            background: none;
+            border: 1px solid #ddd;
+            color: #667eea;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover { background: #667eea; color: white; border-color: #667eea; transform: none; box-shadow: none; }
+        .btn-copy.copied { background: #28a745; border-color: #28a745; color: white; }
+
+        /* Password mask */
+        .pwd-mask { letter-spacing: 3px; color: #999; font-family: monospace; }
+
+        /* Pagination */
+        .pagination { display: flex; gap: 0.5rem; margin-top: 1.5rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .pagination button { padding: 8px 16px; font-size: 14px; }
+        .page-info { color: #666; font-weight: 600; min-width: 140px; text-align: center; }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal.hidden { display: none; }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+            margin: auto;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-40px); opacity: 0; }
+            to   { transform: translateY(0);     opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky; top: 0;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            z-index: 1;
+        }
+
+        .modal-header h3 { margin: 0; color: #333; font-size: 1.2rem; }
+
+        .modal-close {
+            background: none; border: none;
+            font-size: 28px; color: #999;
+            cursor: pointer; padding: 0; line-height: 1;
+        }
+
+        .modal-close:hover { color: #333; transform: none; box-shadow: none; }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            border-top: 1px solid #f0f0f0;
+            background: #f8f9fa;
+            border-radius: 0 0 10px 10px;
+            position: sticky; bottom: 0;
+        }
+
+        /* Form inside modal */
+        .form-group { margin-bottom: 1rem; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .password-input-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .password-input-row input { flex: 1; }
+
+        .btn-icon {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-icon:hover { background: #667eea; color: white; border-color: #667eea; transform: none; box-shadow: none; }
+
+        /* Warning banners */
+        .warning-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 10px 14px;
+            margin-top: 12px;
+        }
+
+        .warning-banner .w-title { font-size: 13px; font-weight: 700; color: #856404; margin-bottom: 6px; }
+        .warning-item { font-size: 12px; color: #856404; padding: 2px 0; }
+
+        .breach-banner {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 10px 14px;
+            margin-top: 8px;
+        }
+
+        .breach-banner .w-title { font-size: 13px; font-weight: 700; color: #721c24; margin-bottom: 4px; }
+        .breach-banner p { font-size: 12px; color: #721c24; }
+
+        /* Empty state */
+        .empty-state { text-align: center; padding: 3rem; color: #999; }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+        .empty-state p { font-size: 15px; }
+
+        footer {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 15px; padding: 15px 20px; }
+            .stats-row { grid-template-columns: 1fr; }
+            .toolbar { flex-direction: column; }
+            .modal-content { margin: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="/vault/dashboard" class="navbar-brand">Password Manager</a>
+    <div class="navbar-nav">
+        <span class="navbar-user" id="navUser">👤 <span id="navUserName"></span></span>
+        <button class="navbar-link logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<!-- Main -->
+<div class="container">
+    <div class="card">
+        <div id="alert" class="alert"></div>
+        <div id="loading" class="loading"></div>
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div>
+                <h2>My Vault</h2>
+                <div class="page-subtitle">All your credentials, encrypted and secure.</div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">🔑</div>
+                <div>
+                    <div class="stat-label">Total Entries</div>
+                    <div class="stat-value" id="statTotal">—</div>
+                </div>
+            </div>
+            <div class="stat-card" style="border-left-color:#28a745;">
+                <div class="stat-icon">📄</div>
+                <div>
+                    <div class="stat-label">Total Pages</div>
+                    <div class="stat-value" id="statPages">—</div>
+                </div>
+            </div>
+            <div class="stat-card" style="border-left-color:#764ba2;">
+                <div class="stat-icon">📋</div>
+                <div>
+                    <div class="stat-label">This Page</div>
+                    <div class="stat-value" id="statThisPage">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="search-group">
+                <label>Search</label>
+                <input type="text" id="searchInput" placeholder="Platform, email, URL…" oninput="debounceSearch()">
+            </div>
+            <div class="filter-group">
+                <label>Sort By</label>
+                <select id="sortBy">
+                    <option value="created_at">Date Added</option>
+                    <option value="platform">Platform</option>
+                    <option value="email">Email</option>
+                    <option value="updated_at">Last Updated</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Order</label>
+                <select id="sortOrder">
+                    <option value="desc">Descending</option>
+                    <option value="asc">Ascending</option>
+                </select>
+            </div>
+            <button class="btn-add" onclick="openCreateModal()">+ Add Password</button>
+        </div>
+
+        <!-- Table -->
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Platform</th>
+                    <th>URL</th>
+                    <th>Email</th>
+                    <th>Password</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">Loading…</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button id="prevBtn" disabled onclick="changePage(-1)">← Previous</button>
+            <span class="page-info" id="pageInfo">Page 1</span>
+            <button id="nextBtn" disabled onclick="changePage(1)">Next →</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2024-2026 Password Manager. All rights reserved.</p>
+</footer>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Create / Edit Modal                                                  -->
+<!-- ------------------------------------------------------------------ -->
+<div id="formModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="formModalTitle">Add Password</h3>
+            <button class="modal-close" onclick="closeFormModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>Platform</label>
+                <input type="text" id="fieldPlatform" placeholder="e.g. GitHub">
+            </div>
+            <div class="form-group">
+                <label>URL</label>
+                <input type="text" id="fieldUrl" placeholder="https://github.com">
+            </div>
+            <div class="form-group">
+                <label>Email / Username</label>
+                <input type="text" id="fieldEmail" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="password-input-row">
+                    <input type="password" id="fieldPassword" placeholder="Enter or generate a password">
+                    <button class="btn-icon" title="Show / Hide" onclick="togglePwdVisibility()">👁</button>
+                    <button class="btn-icon" title="Generate password" onclick="generatePassword()">⚡ Generate</button>
+                </div>
+            </div>
+            <div id="formWarnings"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" style="flex:1;padding:10px;" onclick="closeFormModal()">Cancel</button>
+            <button style="flex:2;padding:10px;font-size:14px;" id="formSubmitBtn" onclick="submitForm()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Delete Confirm Modal                                                 -->
+<!-- ------------------------------------------------------------------ -->
+<div id="deleteModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Delete Password</h3>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:#555;font-size:14px;line-height:1.6;">
+                Are you sure you want to permanently delete the password for
+                <strong id="deletePlatformName"></strong>?
+                This cannot be undone.
+            </p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" style="flex:1;padding:10px;" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn-danger" style="flex:2;padding:10px;font-size:14px;" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // -----------------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------------
+    const state = {
+        page: 1, pageSize: 10,
+        sortBy: 'created_at', sortOrder: 'desc',
+        search: '', totalPages: 1
+    };
+
+    let deleteTargetId = null;
+    let isEditMode     = false;
+    let searchTimeout  = null;
+
+    // -----------------------------------------------------------------------
+    // Auth
+    // -----------------------------------------------------------------------
+    function getUserId() { return localStorage.getItem('user_id') || ''; }
+    function getToken()  { return localStorage.getItem('api_token') || ''; }
+
+    function logout() {
+        ['api_token','refresh_token','user_id','role_id','first_name','last_name','email']
+            .forEach(k => localStorage.removeItem(k));
+        window.location.href = '/accounts/login';
+    }
+
+    if (!getToken()) { window.location.href = '/accounts/login'; }
+
+    // -----------------------------------------------------------------------
+    // Init user info in navbar
+    // -----------------------------------------------------------------------
+    function initUser() {
+        const name = localStorage.getItem('first_name') || localStorage.getItem('email') || 'User';
+        document.getElementById('navUserName').textContent = name;
+    }
+
+    // -----------------------------------------------------------------------
+    // Alert / loading
+    // -----------------------------------------------------------------------
+    function showAlert(msg, type = 'info') {
+        const el = document.getElementById('alert');
+        el.textContent  = msg;
+        el.className    = `alert ${type}`;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    function showLoading(v = true) {
+        document.getElementById('loading').style.display = v ? 'block' : 'none';
+    }
+
+    // -----------------------------------------------------------------------
+    // API helper
+    // -----------------------------------------------------------------------
+    async function apiRequest(url, method = 'GET', body = null) {
+        showLoading(true);
+        try {
+            const opts = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                }
+            };
+            if (body) opts.body = JSON.stringify(body);
+            const res  = await fetch(url, opts);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Request failed');
+            return data;
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Load passwords
+    // -----------------------------------------------------------------------
+    async function loadPasswords() {
+        const { page, pageSize, sortBy, sortOrder, search } = state;
+        let url = `/vault/api/user_passwords?page=${page}&page_size=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        try {
+            const data = await apiRequest(url);
+            renderTable(data.data || [], (page - 1) * pageSize);
+            updatePagination(data.pagination);
+        } catch (e) {
+            document.getElementById('tableBody').innerHTML =
+                `<tr><td colspan="7" style="text-align:center;color:#dc3545;padding:2rem;">${e.message}</td></tr>`;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Render table
+    // -----------------------------------------------------------------------
+    function renderTable(entries, offset) {
+        const tbody = document.getElementById('tableBody');
+
+        if (!entries.length) {
+            tbody.innerHTML = `
+                <tr><td colspan="7">
+                    <div class="empty-state">
+                        <div class="empty-icon">🔒</div>
+                        <p>No passwords yet. Click <strong>+ Add Password</strong> to get started.</p>
+                    </div>
+                </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = entries.map((e, i) => `
+            <tr>
+                <td><strong>${offset + i + 1}</strong></td>
+                <td><strong>${e.platform}</strong></td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;" title="${e.url}">${e.url}</td>
+                <td style="font-size:13px;">${e.email}</td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="pwd-mask">••••••••</span>
+                        <button class="btn-copy"
+                            data-pwd="${escapeAttr(e.password)}"
+                            onclick="copyPassword(this)">
+                            Copy
+                        </button>
+                    </div>
+                </td>
+                <td style="font-size:13px;color:#888;">${formatDate(e.updated_at)}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn-edit" onclick="openEditModal(${e.user_password_id}, '${escapeAttr(e.platform)}', '${escapeAttr(e.url)}', '${escapeAttr(e.email)}')">Edit</button>
+                    &nbsp;
+                    <button class="btn-delete-sm" onclick="openDeleteModal(${e.user_password_id}, '${escapeAttr(e.platform)}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updatePagination(pg) {
+        if (!pg) return;
+        state.totalPages = pg.total_pages || 1;
+        document.getElementById('pageInfo').textContent   = `Page ${pg.page} of ${state.totalPages} (${pg.total} total)`;
+        document.getElementById('prevBtn').disabled       = pg.page <= 1;
+        document.getElementById('nextBtn').disabled       = pg.page >= state.totalPages;
+        document.getElementById('statTotal').textContent  = pg.total;
+        document.getElementById('statPages').textContent  = state.totalPages;
+        document.getElementById('statThisPage').textContent = Math.min(pg.page_size, pg.total - (pg.page - 1) * pg.page_size);
+    }
+
+    function changePage(delta) {
+        state.page = Math.max(1, Math.min(state.page + delta, state.totalPages));
+        loadPasswords();
+    }
+
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            state.search = document.getElementById('searchInput').value.trim();
+            state.page   = 1;
+            loadPasswords();
+        }, 350);
+    }
+
+    document.getElementById('sortBy').addEventListener('change', () => {
+        state.sortBy = document.getElementById('sortBy').value;
+        state.page   = 1;
+        loadPasswords();
+    });
+
+    document.getElementById('sortOrder').addEventListener('change', () => {
+        state.sortOrder = document.getElementById('sortOrder').value;
+        state.page      = 1;
+        loadPasswords();
+    });
+
+    // -----------------------------------------------------------------------
+    // Copy password
+    // -----------------------------------------------------------------------
+    function copyPassword(btn) {
+        const pwd = btn.getAttribute('data-pwd');
+        navigator.clipboard.writeText(pwd).then(() => {
+            btn.classList.add('copied');
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.textContent = 'Copy';
+            }, 2000);
+        }).catch(() => showAlert('Could not copy to clipboard.', 'error'));
+    }
+
+    // -----------------------------------------------------------------------
+    // Create / Edit modal
+    // -----------------------------------------------------------------------
+    function openCreateModal() {
+        isEditMode = false;
+        document.getElementById('formModalTitle').textContent = 'Add Password';
+        document.getElementById('formSubmitBtn').textContent  = 'Save';
+        document.getElementById('editId').value        = '';
+        document.getElementById('fieldPlatform').value = '';
+        document.getElementById('fieldUrl').value      = '';
+        document.getElementById('fieldEmail').value    = '';
+        document.getElementById('fieldPassword').value = '';
+        document.getElementById('fieldPassword').type  = 'password';
+        document.getElementById('formWarnings').innerHTML = '';
+        document.getElementById('formModal').classList.remove('hidden');
+    }
+
+    function openEditModal(id, platform, url, email) {
+        isEditMode = true;
+        document.getElementById('formModalTitle').textContent = 'Edit Password';
+        document.getElementById('formSubmitBtn').textContent  = 'Update';
+        document.getElementById('editId').value        = id;
+        document.getElementById('fieldPlatform').value = platform;
+        document.getElementById('fieldUrl').value      = url;
+        document.getElementById('fieldEmail').value    = email;
+        document.getElementById('fieldPassword').value = '';
+        document.getElementById('fieldPassword').type  = 'password';
+        document.getElementById('formWarnings').innerHTML = '';
+        document.getElementById('formModal').classList.remove('hidden');
+    }
+
+    function closeFormModal() {
+        document.getElementById('formModal').classList.add('hidden');
+    }
+
+    function togglePwdVisibility() {
+        const f = document.getElementById('fieldPassword');
+        f.type = f.type === 'password' ? 'text' : 'password';
+    }
+
+    async function generatePassword() {
+        try {
+            const data = await apiRequest('/vault/api/generate_password');
+            document.getElementById('fieldPassword').value = data.password;
+            document.getElementById('fieldPassword').type  = 'text';
+            showAlert(`Password generated using ${data.policy_name}.`, 'success');
+        } catch (e) {
+            showAlert(e.message, 'error');
+        }
+    }
+
+    async function submitForm() {
+        const platform = document.getElementById('fieldPlatform').value.trim();
+        const url      = document.getElementById('fieldUrl').value.trim();
+        const email    = document.getElementById('fieldEmail').value.trim();
+        const password = document.getElementById('fieldPassword').value;
+
+        if (!platform || !url || !email) {
+            showAlert('Platform, URL and email are required.', 'error');
+            return;
+        }
+
+        if (!isEditMode && !password) {
+            showAlert('Password is required.', 'error');
+            return;
+        }
+
+        try {
+            let result;
+            if (isEditMode) {
+                const body = {
+                    user_password_id: parseInt(document.getElementById('editId').value),
+                    platform, url, email
+                };
+                if (password) body.password = password;
+                result = await apiRequest('/vault/api/user_passwords', 'PUT', body);
+            } else {
+                result = await apiRequest('/vault/api/user_passwords', 'POST', {
+                    platform, url, email, password
+                });
+            }
+
+            showAlert(result.message, 'success');
+            renderFormWarnings(result);
+            loadPasswords();
+
+            if (!result.policy_warning && !result.breach_warning) {
+                closeFormModal();
+            }
+        } catch (e) {
+            showAlert(e.message, 'error');
+        }
+    }
+
+    function renderFormWarnings(result) {
+        const container = document.getElementById('formWarnings');
+        let html = '';
+
+        if (result.policy_warning) {
+            const items = (result.policy_warning.violations || [])
+                .map(v => `<div class="warning-item">• ${v.violation_name}</div>`).join('');
+            html += `
+                <div class="warning-banner">
+                    <div class="w-title">⚠ Policy Violations (${result.policy_warning.violation_count})</div>
+                    ${items}
+                </div>`;
+        }
+
+        if (result.breach_warning) {
+            const sources = (result.breach_warning.breached_in || []).map(b => b.source_name).join(', ');
+            html += `
+                <div class="breach-banner">
+                    <div class="w-title">🚨 Password Found in Breach Database</div>
+                    <p>Found in: ${sources}. Consider choosing a stronger password.</p>
+                </div>`;
+        }
+
+        container.innerHTML = html;
+    }
+
+    // -----------------------------------------------------------------------
+    // Delete modal
+    // -----------------------------------------------------------------------
+    function openDeleteModal(id, platform) {
+        deleteTargetId = id;
+        document.getElementById('deletePlatformName').textContent = platform;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        deleteTargetId = null;
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    async function confirmDelete() {
+        if (!deleteTargetId) return;
+        try {
+            const result = await apiRequest('/vault/api/user_passwords', 'DELETE', {
+                user_password_id: deleteTargetId
+            });
+            showAlert(result.message, 'success');
+            closeDeleteModal();
+            loadPasswords();
+        } catch (e) {
+            showAlert(e.message, 'error');
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+    function formatDate(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function escapeAttr(str) {
+        return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // -----------------------------------------------------------------------
+    // Init
+    // -----------------------------------------------------------------------
+    initUser();
+    loadPasswords();
+</script>
+</body>
+</html>

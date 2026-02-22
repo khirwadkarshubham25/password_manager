@@ -1,0 +1,378 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Roles - Password Manager Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .page-header h2 { color: #333; font-size: 1.8rem; margin: 0; }
+
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+        background: white;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-50px); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .modal-header h3 { margin: 0; color: #333; font-size: 1.25rem; }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+
+    .modal-close:hover { color: #333; transform: none; box-shadow: none; }
+
+    .modal-form { padding: 20px; }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #f0f0f0;
+        background: #f8f9fa;
+        border-radius: 0 0 10px 10px;
+    }
+
+    .modal-actions button { flex: 1; }
+
+    /* Action buttons */
+    .action-buttons { display: flex; gap: 8px; }
+
+    .btn-view {
+        background: #6f42c1;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-view:hover { background: #5a32a3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-edit {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-edit:hover { background: #0056b3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-delete:hover { background: #c82333; transform: translateY(-1px); box-shadow: none; }
+
+    @media (max-width: 768px) {
+        .page-header { flex-direction: column; gap: 15px; align-items: stretch; }
+        .btn-create { justify-content: center; }
+        .modal-content { margin: 20px; }
+        .action-buttons { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Roles</h2>
+    <button class="btn-create" onclick="openCreateModal()">
+        <span>+</span> Create New Role
+    </button>
+</div>
+
+<!-- Create / Edit Modal -->
+<div id="roleModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New Role</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-form">
+            <input type="hidden" id="roleId">
+
+            <div class="form-group">
+                <label for="roleName">Role Name</label>
+                <input type="text" id="roleName" placeholder="e.g. Admin, User">
+                <div class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="roleDescription">Description</label>
+                <textarea id="roleDescription" rows="3" placeholder="Describe this role..."></textarea>
+                <div class="error-message"></div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button onclick="submitRole()">Save Role</button>
+            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div id="viewModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Role Details</h3>
+            <button class="modal-close" onclick="closeViewModal()">&times;</button>
+        </div>
+        <div id="viewModalBody" style="padding:20px;">
+            <div style="text-align:center;padding:2rem;color:#999;">Loading...</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Role Name</th>
+            <th>Description</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="rolesTableBody">
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:#999;">Loading roles...</td></tr>
+    </tbody>
+</table>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let roles = [];
+
+    // ---------------------------------------------------------------
+    // Load roles
+    // ---------------------------------------------------------------
+    async function loadRoles() {
+        try {
+            const data = await apiRequest('/admin_panel/api/roles', 'GET', null, false);
+            roles = data.roles || [];
+            renderTable(roles);
+        } catch (_) {
+            document.getElementById('rolesTableBody').innerHTML =
+                '<tr><td colspan="5" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load roles.</td></tr>';
+        }
+    }
+
+    function renderTable(roles) {
+        const tbody = document.getElementById('rolesTableBody');
+        if (!roles.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#999;">No roles found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = roles.map((r, i) => `
+            <tr>
+                <td><strong>${i + 1}</strong></td>
+                <td><strong>${r.name}</strong></td>
+                <td>${r.description || '—'}</td>
+                <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-view" onclick="viewRole(${r.id})">View</button>
+                        <button class="btn-edit" onclick="openEditModal(${r.id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteRole(${r.id}, '${r.name}')">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // ---------------------------------------------------------------
+    // View details
+    // ---------------------------------------------------------------
+    function viewRole(roleId) {
+        const r = roles.find(r => r.id === roleId);
+        if (!r) return;
+        document.getElementById('viewModalBody').innerHTML = `
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                ${row('Role Name', r.name)}
+                ${row('Description', r.description || '—')}
+                ${row('Created At', new Date(r.created_at).toLocaleString())}
+            </table>
+        `;
+        document.getElementById('viewModal').classList.remove('hidden');
+    }
+
+    function row(label, value) {
+        return `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:10px 8px;font-weight:600;color:#555;width:40%;">${label}</td>
+                <td style="padding:10px 8px;color:#333;">${value}</td>
+            </tr>`;
+    }
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.add('hidden');
+    }
+
+    // ---------------------------------------------------------------
+    // Create / Edit modal
+    // ---------------------------------------------------------------
+    function openCreateModal() {
+        document.getElementById('modalTitle').textContent = 'Create New Role';
+        document.getElementById('roleId').value = '';
+        document.getElementById('roleName').value = '';
+        document.getElementById('roleDescription').value = '';
+        clearErrors();
+        document.getElementById('roleModal').classList.remove('hidden');
+    }
+
+    function openEditModal(roleId) {
+        const r = roles.find(r => r.id === roleId);
+        if (!r) return;
+        document.getElementById('modalTitle').textContent = 'Edit Role';
+        document.getElementById('roleId').value = r.id;
+        document.getElementById('roleName').value = r.name;
+        document.getElementById('roleDescription').value = r.description || '';
+        clearErrors();
+        document.getElementById('roleModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('roleModal').classList.add('hidden');
+    }
+
+    function clearErrors() {
+        document.querySelectorAll('#roleModal .form-group').forEach(g => {
+            g.classList.remove('error');
+            const err = g.querySelector('.error-message');
+            if (err) err.textContent = '';
+        });
+    }
+
+    function setFieldError(fieldId, message) {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        const group = el.closest('.form-group');
+        if (!group) return;
+        group.classList.add('error');
+        const err = group.querySelector('.error-message');
+        if (err) err.textContent = message;
+    }
+
+    // ---------------------------------------------------------------
+    // Submit (create or update)
+    // ---------------------------------------------------------------
+    async function submitRole() {
+        const roleId = document.getElementById('roleId').value;
+        const name   = document.getElementById('roleName').value.trim();
+        const desc   = document.getElementById('roleDescription').value.trim();
+
+        clearErrors();
+        if (!name) { setFieldError('roleName', 'Role name is required'); return; }
+
+        const isEdit  = !!roleId;
+        const payload = { name, description: desc };
+        if (isEdit) payload.role_id = roleId;
+
+        try {
+            await apiRequest('/admin_panel/api/roles', isEdit ? 'PUT' : 'POST', payload);
+            closeModal();
+            loadRoles();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Delete
+    // ---------------------------------------------------------------
+    async function deleteRole(roleId, name) {
+        if (!confirm(`Are you sure you want to delete the role "${name}"? This cannot be undone.`)) return;
+        try {
+            await apiRequest('/admin_panel/api/roles', 'DELETE', { role_id: roleId });
+            loadRoles();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Init
+    // ---------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', loadRoles);
+</script>
+{% endblock %}

@@ -1,0 +1,789 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Password Policies - Password Manager Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .page-header h2 { color: #333; font-size: 1.8rem; margin: 0; }
+
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        z-index: 1000;
+        overflow-y: auto;
+        padding: 20px 0;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+        background: white;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 620px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
+        margin: auto;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-50px); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .modal-header h3 { margin: 0; color: #333; font-size: 1.25rem; }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .modal-close:hover { color: #333; transform: none; box-shadow: none; }
+
+    .modal-body { padding: 20px; max-height: 65vh; overflow-y: auto; }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #f0f0f0;
+        background: #f8f9fa;
+        border-radius: 0 0 10px 10px;
+        position: sticky;
+        bottom: 0;
+    }
+
+    .modal-actions button { flex: 1; }
+
+    .form-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #667eea;
+        margin: 1.5rem 0 1rem;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #f0f0f0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    /* Toggle */
+    .toggle-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        border: 1px solid #e9ecef;
+        margin-bottom: 8px;
+    }
+
+    .toggle-item label {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 46px;
+        height: 24px;
+        flex-shrink: 0;
+        margin-left: 12px;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #ccc;
+        border-radius: 24px;
+        transition: 0.3s;
+    }
+
+    .toggle-slider::before {
+        content: '';
+        position: absolute;
+        width: 18px; height: 18px;
+        left: 3px; bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background: #667eea; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+    /* Filters */
+    .filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+
+    .filter-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+
+    .active-filter {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .active-filter > span {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .active-filter .toggle-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 12px;
+        height: 38px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background: #fff;
+        min-width: 130px;
+    }
+
+    .active-filter .toggle-label {
+        font-size: 14px;
+        color: #555;
+        min-width: 24px;
+    }
+
+    /* Action buttons */
+    .action-buttons { display: flex; gap: 6px; }
+
+    .btn-view {
+        background: #6f42c1;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-view:hover { background: #5a32a3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-edit {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-edit:hover { background: #0056b3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-delete:hover { background: #c82333; transform: translateY(-1px); box-shadow: none; }
+
+    .badge-active   { color: #27ae60; font-weight: 600; }
+    .badge-inactive { color: #dc3545; font-weight: 600; }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .page-info { color: #666; font-weight: 600; min-width: 120px; text-align: center; }
+
+    @media (max-width: 768px) {
+        .page-header { flex-direction: column; gap: 15px; align-items: stretch; }
+        .btn-create { justify-content: center; }
+        .filters { flex-direction: column; }
+        .form-row { grid-template-columns: 1fr; }
+        .modal-content { margin: 10px; }
+        .action-buttons { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Password Policies</h2>
+    <button class="btn-create" onclick="openCreateModal()">
+        <span>+</span> Create New Policy
+    </button>
+</div>
+
+<!-- Create / Edit Modal -->
+<div id="policyModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New Policy</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="policyId">
+
+            <div class="form-group">
+                <label for="policyName">Policy Name *</label>
+                <input type="text" id="policyName" placeholder="e.g. Standard Policy">
+                <div class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" rows="3" placeholder="Describe this policy..."></textarea>
+            </div>
+
+            <div class="form-section-title">Policy Status</div>
+            <div class="toggle-item">
+                <label for="isActive">Active Policy</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="isActive">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="form-section-title">Length Requirements</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="minLength">Min Length (4–256)</label>
+                    <input type="number" id="minLength" min="4" max="256" placeholder="8">
+                    <div class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="maxLength">Max Length (4–256)</label>
+                    <input type="number" id="maxLength" min="4" max="256" placeholder="128">
+                    <div class="error-message"></div>
+                </div>
+            </div>
+
+            <div class="form-section-title">Complexity Requirements</div>
+            <div class="form-group">
+                <label for="minComplexity">Min Complexity Types (2–4)</label>
+                <input type="number" id="minComplexity" min="2" max="4" placeholder="3">
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="minEntropy">Min Entropy Score</label>
+                <input type="number" id="minEntropy" min="0" step="0.1" placeholder="40.0">
+                <div class="error-message"></div>
+            </div>
+
+            <div class="form-section-title">Character Requirements</div>
+            <div class="toggle-item">
+                <label for="requireUppercase">Require Uppercase (A–Z)</label>
+                <label class="toggle-switch"><input type="checkbox" id="requireUppercase"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-item">
+                <label for="requireLowercase">Require Lowercase (a–z)</label>
+                <label class="toggle-switch"><input type="checkbox" id="requireLowercase"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-item">
+                <label for="requireDigits">Require Digits (0–9)</label>
+                <label class="toggle-switch"><input type="checkbox" id="requireDigits"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-item">
+                <label for="requireSpecialChars">Require Special Characters</label>
+                <label class="toggle-switch"><input type="checkbox" id="requireSpecialChars"><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="form-section-title">Rejection Rules</div>
+            <div class="toggle-item">
+                <label for="rejectDictionary">Reject Dictionary Words</label>
+                <label class="toggle-switch"><input type="checkbox" id="rejectDictionary"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-item">
+                <label for="excludeName">Exclude Full Name</label>
+                <label class="toggle-switch"><input type="checkbox" id="excludeName"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-item">
+                <label for="excludeEmail">Exclude Email</label>
+                <label class="toggle-switch"><input type="checkbox" id="excludeEmail"><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="form-section-title">Password Age & History</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="maxAgeDays">Max Age (days)</label>
+                    <input type="number" id="maxAgeDays" min="0" placeholder="90">
+                </div>
+                <div class="form-group">
+                    <label for="minRotationDays">Min Rotation (days)</label>
+                    <input type="number" id="minRotationDays" min="0" placeholder="1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="historyCount">History Count</label>
+                <input type="number" id="historyCount" min="0" placeholder="5">
+            </div>
+
+            <div class="form-section-title">Special Characters</div>
+            <div class="form-group">
+                <label for="specialCharsAllowed">Allowed Special Characters</label>
+                <input type="text" id="specialCharsAllowed" placeholder="!@#$%^&*-_=+[]{}|;:,.<>?">
+            </div>
+            <div class="form-group">
+                <label for="specialCharsRequired">Required Special Characters</label>
+                <input type="text" id="specialCharsRequired" placeholder="Leave empty if not required">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button onclick="submitPolicy()">Save Policy</button>
+            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div id="viewModal" class="modal hidden">
+    <div class="modal-content" style="max-width:580px;">
+        <div class="modal-header">
+            <h3>Policy Details</h3>
+            <button class="modal-close" onclick="closeViewModal()">&times;</button>
+        </div>
+        <div id="viewModalBody" class="modal-body">
+            <div style="text-align:center;padding:2rem;color:#999;">Loading...</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+    <div class="filter-group">
+        <label>Sort By</label>
+        <select id="sortBy">
+            <option value="created_at">Creation Date</option>
+            <option value="policy_name">Policy Name</option>
+            <option value="min_length">Min Length</option>
+            <option value="max_length">Max Length</option>
+            <option value="min_complexity_types">Complexity</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Order</label>
+        <select id="sortOrder">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+        </select>
+    </div>
+    <div class="active-filter">
+        <span>Active Only</span>
+        <div class="toggle-box">
+            <span class="toggle-label" id="activeOnlyLabel">Off</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="activeOnly" onchange="onActiveToggle(this)">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </div>
+    <button class="btn-secondary" style="padding:8px 20px;font-size:14px;" onclick="applyFilters()">Apply Filters</button>
+</div>
+
+<!-- Table -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Policy Name</th>
+            <th>Min Length</th>
+            <th>Max Length</th>
+            <th>Complexity</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="policiesTableBody">
+        <tr><td colspan="8" style="text-align:center;padding:2rem;color:#999;">Loading policies...</td></tr>
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    <button id="prevPageBtn" disabled onclick="changePage(-1)">← Previous</button>
+    <span class="page-info" id="pageInfo">Page 1</span>
+    <button id="nextPageBtn" disabled onclick="changePage(1)">Next →</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const state = {
+        page: 1, pageSize: 10,
+        sortBy: 'created_at', sortOrder: 'desc',
+        activeOnly: false,
+        totalPages: 1
+    };
+
+    // ---------------------------------------------------------------
+    // Load policies
+    // ---------------------------------------------------------------
+    async function loadPolicies() {
+        const isActiveParam = state.activeOnly ? '1' : '';
+        const url = `/admin_panel/api/policies?page=${state.page}&page_size=${state.pageSize}&sort_by=${state.sortBy}&sort_order=${state.sortOrder}&is_active=${isActiveParam}`;
+        try {
+            const data = await apiRequest(url, 'GET', null, false);
+            renderTable(data.data || [], (state.page - 1) * state.pageSize);
+            updatePagination(data.pagination);
+        } catch (_) {
+            document.getElementById('policiesTableBody').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load policies.</td></tr>';
+        }
+    }
+
+    function renderTable(policies, offset) {
+        const tbody = document.getElementById('policiesTableBody');
+        if (!policies.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:#999;">No policies found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = policies.map((p, i) => `
+            <tr>
+                <td><strong>${offset + i + 1}</strong></td>
+                <td><strong>${p.policy_name}</strong></td>
+                <td>${p.min_length}</td>
+                <td>${p.max_length}</td>
+                <td>${p.min_complexity_types}</td>
+                <td><span class="${p.status === 1 ? 'badge-active' : 'badge-inactive'}">${p.status === 1 ? 'Active' : 'Inactive'}</span></td>
+                <td>${new Date(p.created_at).toLocaleDateString()}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-view" onclick="viewPolicy(${p.policy_id})">View</button>
+                        <button class="btn-edit" onclick="openEditModal(${p.policy_id})">Edit</button>
+                        <button class="btn-delete" onclick="deletePolicy(${p.policy_id}, '${p.policy_name}')">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updatePagination(pg) {
+        state.totalPages = pg.total_pages || 1;
+        document.getElementById('pageInfo').textContent = `Page ${pg.page} of ${state.totalPages}`;
+        document.getElementById('prevPageBtn').disabled = pg.page <= 1;
+        document.getElementById('nextPageBtn').disabled = pg.page >= state.totalPages;
+    }
+
+    function changePage(delta) {
+        state.page = Math.max(1, Math.min(state.page + delta, state.totalPages));
+        loadPolicies();
+    }
+
+    function onActiveToggle(checkbox) {
+        document.getElementById('activeOnlyLabel').textContent = checkbox.checked ? 'On' : 'Off';
+        applyFilters();
+    }
+
+    function applyFilters() {
+        state.sortBy = document.getElementById('sortBy').value;
+        state.sortOrder = document.getElementById('sortOrder').value;
+        state.activeOnly = document.getElementById('activeOnly').checked;
+        state.page = 1;
+        loadPolicies();
+    }
+
+    // ---------------------------------------------------------------
+    // View details
+    // ---------------------------------------------------------------
+    async function viewPolicy(policyId) {
+        document.getElementById('viewModalBody').innerHTML =
+            '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
+        document.getElementById('viewModal').classList.remove('hidden');
+        try {
+            const data = await apiRequest(`/admin_panel/api/policy-details?policy_id=${policyId}`, 'GET', null, false);
+            const p = data.data;
+            const bool = v => v
+                ? '<span style="color:#27ae60;font-weight:600;">Yes</span>'
+                : '<span style="color:#dc3545;font-weight:600;">No</span>';
+            document.getElementById('viewModalBody').innerHTML = `
+                <div class="form-section-title">General</div>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Policy Name', p.policy_name)}
+                    ${row('Description', p.description || '—')}
+                    ${row('Status', p.status === 1 ? '<span class="badge-active">Active</span>' : '<span class="badge-inactive">Inactive</span>')}
+                    ${row('Created At', new Date(p.created_at).toLocaleString())}
+                    ${row('Updated At', new Date(p.updated_at).toLocaleString())}
+                </table>
+                <div class="form-section-title" style="margin-top:1rem;">Length & Complexity</div>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Min Length', p.min_length)}
+                    ${row('Max Length', p.max_length)}
+                    ${row('Min Complexity Types', p.min_complexity_types)}
+                    ${row('Min Entropy Score', p.min_entropy_score)}
+                </table>
+                <div class="form-section-title" style="margin-top:1rem;">Character Requirements</div>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Require Uppercase', bool(p.require_uppercase))}
+                    ${row('Require Lowercase', bool(p.require_lowercase))}
+                    ${row('Require Digits', bool(p.require_digits))}
+                    ${row('Require Special Chars', bool(p.require_special_chars))}
+                    ${row('Special Chars Allowed', p.special_chars_allowed || '—')}
+                    ${row('Special Chars Required', p.special_chars_required || '—')}
+                </table>
+                <div class="form-section-title" style="margin-top:1rem;">Rejection Rules</div>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Reject Dictionary Words', bool(p.reject_dictionary_words))}
+                    ${row('Exclude Name', bool(p.exclude_name))}
+                    ${row('Exclude Email', bool(p.exclude_email))}
+                </table>
+                <div class="form-section-title" style="margin-top:1rem;">Age & History</div>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Max Age (days)', p.max_age_days)}
+                    ${row('Min Rotation (days)', p.min_rotation_days)}
+                    ${row('History Count', p.history_count)}
+                </table>
+            `;
+        } catch (_) {
+            document.getElementById('viewModalBody').innerHTML =
+                '<div style="text-align:center;color:#dc3545;padding:2rem;">Failed to load policy details.</div>';
+        }
+    }
+
+    function row(label, value) {
+        return `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:8px;font-weight:600;color:#555;width:45%;">${label}</td>
+            <td style="padding:8px;color:#333;">${value}</td>
+        </tr>`;
+    }
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.add('hidden');
+    }
+
+    // ---------------------------------------------------------------
+    // Create / Edit modal
+    // ---------------------------------------------------------------
+    function openCreateModal() {
+        document.getElementById('modalTitle').textContent = 'Create New Policy';
+        document.getElementById('policyId').value = '';
+        clearForm();
+        document.getElementById('policyModal').classList.remove('hidden');
+    }
+
+    async function openEditModal(policyId) {
+        try {
+            const data = await apiRequest(`/admin_panel/api/policy-details?policy_id=${policyId}`, 'GET', null, false);
+            const p = data.data;
+            document.getElementById('modalTitle').textContent = 'Edit Policy';
+            document.getElementById('policyId').value = policyId;
+            document.getElementById('policyName').value        = p.policy_name || '';
+            document.getElementById('description').value       = p.description || '';
+            document.getElementById('isActive').checked        = p.status === 1;
+            document.getElementById('minLength').value         = p.min_length ?? '';
+            document.getElementById('maxLength').value         = p.max_length ?? '';
+            document.getElementById('minComplexity').value     = p.min_complexity_types ?? '';
+            document.getElementById('minEntropy').value        = p.min_entropy_score ?? '';
+            document.getElementById('requireUppercase').checked  = !!p.require_uppercase;
+            document.getElementById('requireLowercase').checked  = !!p.require_lowercase;
+            document.getElementById('requireDigits').checked     = !!p.require_digits;
+            document.getElementById('requireSpecialChars').checked = !!p.require_special_chars;
+            document.getElementById('rejectDictionary').checked  = !!p.reject_dictionary_words;
+            document.getElementById('excludeName').checked       = !!p.exclude_name;
+            document.getElementById('excludeEmail').checked      = !!p.exclude_email;
+            document.getElementById('maxAgeDays').value          = p.max_age_days ?? '';
+            document.getElementById('minRotationDays').value     = p.min_rotation_days ?? '';
+            document.getElementById('historyCount').value        = p.history_count ?? '';
+            document.getElementById('specialCharsAllowed').value = p.special_chars_allowed || '';
+            document.getElementById('specialCharsRequired').value = p.special_chars_required || '';
+            document.getElementById('policyModal').classList.remove('hidden');
+        } catch (_) {}
+    }
+
+    function closeModal() {
+        document.getElementById('policyModal').classList.add('hidden');
+        clearForm();
+    }
+
+    function clearForm() {
+        ['policyName', 'description', 'minLength', 'maxLength', 'minComplexity',
+         'minEntropy', 'maxAgeDays', 'minRotationDays', 'historyCount',
+         'specialCharsAllowed', 'specialCharsRequired'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        ['isActive', 'requireUppercase', 'requireLowercase', 'requireDigits',
+         'requireSpecialChars', 'rejectDictionary', 'excludeName', 'excludeEmail'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.checked = false;
+        });
+        document.querySelectorAll('#policyModal .form-group').forEach(g => {
+            g.classList.remove('error');
+            const err = g.querySelector('.error-message');
+            if (err) err.textContent = '';
+        });
+    }
+
+    function setFieldError(fieldId, message) {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        const group = el.closest('.form-group');
+        if (!group) return;
+        group.classList.add('error');
+        const err = group.querySelector('.error-message');
+        if (err) err.textContent = message;
+    }
+
+    // ---------------------------------------------------------------
+    // Submit (create or update)
+    // ---------------------------------------------------------------
+    async function submitPolicy() {
+        const policyId = document.getElementById('policyId').value;
+        const isEdit   = !!policyId;
+        const policyName = document.getElementById('policyName').value.trim();
+
+        document.querySelectorAll('#policyModal .form-group').forEach(g => {
+            g.classList.remove('error');
+            const err = g.querySelector('.error-message');
+            if (err) err.textContent = '';
+        });
+
+        if (!policyName) { setFieldError('policyName', 'Policy name is required'); return; }
+
+        const intVal = id => { const v = document.getElementById(id).value; return v !== '' ? parseInt(v) : null; };
+        const floatVal = id => { const v = document.getElementById(id).value; return v !== '' ? parseFloat(v) : null; };
+        const strVal = id => document.getElementById(id).value.trim() || null;
+
+        const payload = {
+            policy_name:             policyName,
+            description:             strVal('description'),
+            status:                  document.getElementById('isActive').checked ? 1 : 0,
+            min_length:              intVal('minLength'),
+            max_length:              intVal('maxLength'),
+            min_complexity_types:    intVal('minComplexity'),
+            min_entropy_score:       floatVal('minEntropy'),
+            require_uppercase:       document.getElementById('requireUppercase').checked,
+            require_lowercase:       document.getElementById('requireLowercase').checked,
+            require_digits:          document.getElementById('requireDigits').checked,
+            require_special_chars:   document.getElementById('requireSpecialChars').checked,
+            reject_dictionary_words: document.getElementById('rejectDictionary').checked,
+            exclude_name:            document.getElementById('excludeName').checked,
+            exclude_email:           document.getElementById('excludeEmail').checked,
+            max_age_days:            intVal('maxAgeDays'),
+            min_rotation_days:       intVal('minRotationDays'),
+            history_count:           intVal('historyCount'),
+            special_chars_allowed:   strVal('specialCharsAllowed'),
+            special_chars_required:  strVal('specialCharsRequired')
+        };
+
+        if (isEdit) payload.policy_id = policyId;
+
+        try {
+            await apiRequest('/admin_panel/api/policy-details', isEdit ? 'PUT' : 'POST', payload);
+            closeModal();
+            loadPolicies();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Delete
+    // ---------------------------------------------------------------
+    async function deletePolicy(policyId, name) {
+        if (!confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) return;
+        try {
+            await apiRequest('/admin_panel/api/policy-details', 'DELETE', { policy_id: policyId });
+            loadPolicies();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Init
+    // ---------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', loadPolicies);
+</script>
+{% endblock %}

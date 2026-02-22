@@ -41,8 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'password_manager_admin.apps.PasswordManagerAdminConfig',
-    'password_vault_manager.apps.PasswordVaultManagerConfig',
+    'accounts.apps.AccountsConfig',
+    'admin_panel.apps.AdminPanelConfig',
+    'vault.apps.VaultConfig',
 ]
 
 MIDDLEWARE = [

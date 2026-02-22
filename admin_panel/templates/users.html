@@ -1,0 +1,661 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Users Management - Password Manager Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .users-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .users-header h2 {
+        color: #333;
+        font-size: 1.8rem;
+        margin: 0;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+        background: white;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-50px); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .modal-header h3 { margin: 0; color: #333; font-size: 1.25rem; }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .modal-close:hover { color: #333; transform: none; box-shadow: none; }
+
+    .modal-form { padding: 20px; }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #f0f0f0;
+        background: #f8f9fa;
+        border-radius: 0 0 10px 10px;
+    }
+
+    .modal-actions button { flex: 1; }
+
+    /* Filters */
+    .filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .filter-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+
+    /* Table action buttons */
+    .action-buttons { display: flex; gap: 8px; }
+
+    .btn-view {
+        background: #6f42c1;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-view:hover { background: #5a32a3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-edit {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-edit:hover { background: #0056b3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-delete:hover { background: #c82333; transform: translateY(-1px); box-shadow: none; }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .page-info { color: #666; font-weight: 600; min-width: 120px; text-align: center; }
+
+    .toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .toggle-label {
+        font-size: 14px;
+        font-weight: 600;
+        min-width: 60px;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 24px;
+        margin: 0;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #ccc;
+        border-radius: 24px;
+        transition: 0.3s;
+    }
+
+    .toggle-slider::before {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background: #27ae60; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+    @media (max-width: 768px) {
+        .users-header { flex-direction: column; gap: 15px; align-items: stretch; }
+        .btn-create { justify-content: center; }
+        .filters { flex-direction: column; }
+        .form-row { grid-template-columns: 1fr; }
+        .modal-content { margin: 20px; }
+        .action-buttons { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="users-header">
+    <h2>Users Management</h2>
+    <button class="btn-create" onclick="openCreateModal()">
+        <span>+</span> Create New User
+    </button>
+</div>
+
+<!-- Create / Edit Modal -->
+<div id="userModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New User</h3>
+            <button class="modal-close" onclick="closeUserModal()">&times;</button>
+        </div>
+        <div class="modal-form">
+            <input type="hidden" id="userId">
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="user@example.com">
+                <div class="error-message"></div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" placeholder="First name">
+                    <div class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" placeholder="Last name">
+                    <div class="error-message"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="text" id="phone" placeholder="Phone number (optional)">
+                <div class="error-message"></div>
+            </div>
+
+            <!-- Password only shown on create -->
+            <div class="form-group" id="passwordGroup">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter password">
+                <div class="error-message"></div>
+            </div>
+
+            <div class="form-group" id="roleGroup">
+                <label for="roleId">Role</label>
+                <select id="roleId">
+                    <option value="">Select role...</option>
+                </select>
+                <div class="error-message"></div>
+            </div>
+
+            <!-- Active toggle — edit only -->
+            <div class="form-group" id="isActiveGroup" style="display:none;">
+                <label>Status</label>
+                <div class="toggle-row">
+                    <span class="toggle-label" id="isActiveLabel">Active</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="isActive">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button id="submitBtn" onclick="submitUser()">Save User</button>
+            <button class="btn-secondary" onclick="closeUserModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- View User Details Modal -->
+<div id="viewModal" class="modal hidden">
+    <div class="modal-content" style="max-width:520px;">
+        <div class="modal-header">
+            <h3>User Details</h3>
+            <button class="modal-close" onclick="closeViewModal()">&times;</button>
+        </div>
+        <div id="viewModalBody" style="padding:20px;">
+            <div style="text-align:center;padding:2rem;color:#999;">Loading...</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+    <div class="filter-group">
+        <label>Sort By</label>
+        <select id="sortBy">
+            <option value="created_at">Creation Date</option>
+            <option value="email">Email</option>
+            <option value="first_name">First Name</option>
+            <option value="last_name">Last Name</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Order</label>
+        <select id="sortOrder">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+        </select>
+    </div>
+    <button class="btn-secondary" style="padding:8px 20px;font-size:14px;" onclick="applyFilters()">Apply Filters</button>
+</div>
+
+<!-- Table -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Email</th>
+            <th>Full Name</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="usersTableBody">
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:#999;">Loading users...</td></tr>
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    <button id="prevPageBtn" disabled onclick="changePage(-1)">← Previous</button>
+    <span class="page-info" id="pageInfo">Page 1</span>
+    <button id="nextPageBtn" disabled onclick="changePage(1)">Next →</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const state = {
+        page: 1,
+        pageSize: 10,
+        sortBy: 'created_at',
+        sortOrder: 'desc',
+        totalPages: 1,
+        editingUserId: null,
+        users: []
+    };
+
+    // ---------------------------------------------------------------
+    // Load roles into select on page load
+    // ---------------------------------------------------------------
+    async function loadRoles() {
+        try {
+            const res = await apiRequest('/admin_panel/api/roles', 'GET', null, false);
+            const select = document.getElementById('roleId');
+            (res.roles || []).forEach(role => {
+                const opt = document.createElement('option');
+                opt.value = role.id;
+                opt.textContent = role.name;
+                select.appendChild(opt);
+            });
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Load users
+    // ---------------------------------------------------------------
+    async function loadUsers() {
+        const url = `/admin_panel/api/users?page=${state.page}&page_size=${state.pageSize}&sort_by=${state.sortBy}&sort_order=${state.sortOrder}`;
+        try {
+            const data = await apiRequest(url, 'GET', null, false);
+            state.users = data.data || [];
+            renderTable(state.users, (state.page - 1) * state.pageSize);
+            updatePagination(data.pagination);
+        } catch (_) {
+            document.getElementById('usersTableBody').innerHTML =
+                '<tr><td colspan="6" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load users.</td></tr>';
+        }
+    }
+
+    function renderTable(users, offset) {
+        const tbody = document.getElementById('usersTableBody');
+        if (!users.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#999;">No users found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = users.map((u, i) => `
+            <tr>
+                <td><strong>${offset + i + 1}</strong></td>
+                <td>${u.email}</td>
+                <td>${u.first_name || ''} ${u.last_name || ''}</td>
+                <td>${u.is_active ? '<span style="color:#27ae60;font-weight:600;">Active</span>' : '<span style="color:#dc3545;font-weight:600;">Inactive</span>'}</td>
+                <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-view" onclick="viewUser(${u.user_id})">View</button>
+                        <button class="btn-edit" onclick="openEditModal(${u.user_id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteUser(${u.user_id}, '${u.email}')">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updatePagination(pg) {
+        state.totalPages = pg.total_pages || 1;
+        document.getElementById('pageInfo').textContent = `Page ${pg.page} of ${state.totalPages}`;
+        document.getElementById('prevPageBtn').disabled = pg.page <= 1;
+        document.getElementById('nextPageBtn').disabled = pg.page >= state.totalPages;
+    }
+
+    function changePage(delta) {
+        state.page = Math.max(1, Math.min(state.page + delta, state.totalPages));
+        loadUsers();
+    }
+
+    function applyFilters() {
+        state.sortBy = document.getElementById('sortBy').value;
+        state.sortOrder = document.getElementById('sortOrder').value;
+        state.page = 1;
+        loadUsers();
+    }
+
+    // ---------------------------------------------------------------
+    // Modal
+    // ---------------------------------------------------------------
+    function openCreateModal() {
+        state.editingUserId = null;
+        document.getElementById('modalTitle').textContent = 'Create New User';
+        document.getElementById('userId').value = '';
+        clearForm();
+        document.getElementById('passwordGroup').style.display = 'block';
+        document.getElementById('isActiveGroup').style.display = 'none';
+        document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function openEditModal(userId) {
+        const user = state.users.find(u => u.user_id === userId);
+        if (!user) return;
+
+        state.editingUserId = userId;
+        document.getElementById('modalTitle').textContent = 'Edit User';
+        document.getElementById('userId').value = userId;
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('firstName').value = user.first_name || '';
+        document.getElementById('lastName').value = user.last_name || '';
+        document.getElementById('phone').value = user.phone || '';
+        // Password not editable from admin
+        document.getElementById('passwordGroup').style.display = 'none';
+
+        // is_active toggle
+        const isActiveCheckbox = document.getElementById('isActive');
+        isActiveCheckbox.checked = !!user.is_active;
+        document.getElementById('isActiveLabel').textContent = user.is_active ? 'Active' : 'Inactive';
+        document.getElementById('isActiveGroup').style.display = 'block';
+
+        document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function closeUserModal() {
+        document.getElementById('userModal').classList.add('hidden');
+        clearForm();
+        state.editingUserId = null;
+    }
+
+    function clearForm() {
+        ['email', 'firstName', 'lastName', 'phone', 'password'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        document.getElementById('roleId').selectedIndex = 0;
+        document.querySelectorAll('#userModal .form-group').forEach(g => {
+            g.classList.remove('error');
+            const err = g.querySelector('.error-message');
+            if (err) err.textContent = '';
+        });
+    }
+
+    function setFieldError(fieldId, message) {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        const group = el.closest('.form-group');
+        if (!group) return;
+        group.classList.add('error');
+        const err = group.querySelector('.error-message');
+        if (err) err.textContent = message;
+    }
+
+    // ---------------------------------------------------------------
+    // Submit (create or update)
+    // ---------------------------------------------------------------
+    async function submitUser() {
+        const userId = document.getElementById('userId').value;
+        const isEdit = !!userId;
+
+        const email     = document.getElementById('email').value.trim();
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName  = document.getElementById('lastName').value.trim();
+        const phone     = document.getElementById('phone').value.trim();
+        const password  = document.getElementById('password').value;
+        const roleId    = document.getElementById('roleId').value;
+
+        // Clear errors
+        document.querySelectorAll('#userModal .form-group').forEach(g => {
+            g.classList.remove('error');
+            const err = g.querySelector('.error-message');
+            if (err) err.textContent = '';
+        });
+
+        if (!email) { setFieldError('email', 'Email is required'); return; }
+        if (!isEdit && !password) { setFieldError('password', 'Password is required'); return; }
+        if (!isEdit && !roleId) { setFieldError('roleId', 'Role is required'); return; }
+
+        const payload = { email, first_name: firstName, last_name: lastName, phone };
+
+        if (isEdit) {
+            payload.user_id = userId;
+            payload.is_active = document.getElementById('isActive').checked;
+        } else {
+            payload.password = password;
+            payload.role_id = roleId;
+        }
+
+        try {
+            const url = '/admin_panel/api/user-details';
+            const method = isEdit ? 'PUT' : 'POST';
+            await apiRequest(url, method, payload);
+            closeUserModal();
+            loadUsers();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // View user details
+    // ---------------------------------------------------------------
+    async function viewUser(userId) {
+        document.getElementById('viewModalBody').innerHTML =
+            '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
+        document.getElementById('viewModal').classList.remove('hidden');
+
+        try {
+            const data = await apiRequest(`/admin_panel/api/user-details?user_id=${userId}`, 'GET', null, false);
+            const u = data.data;
+            document.getElementById('viewModalBody').innerHTML = `
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Email', u.email)}
+                    ${row('First Name', u.first_name || '—')}
+                    ${row('Last Name', u.last_name || '—')}
+                    ${row('Phone', u.phone || '—')}
+                    ${row('Address', u.address || '—')}
+                    ${row('Role', u.role_name || '—')}
+                    ${row('Status', u.is_active
+                        ? '<span style="color:#27ae60;font-weight:600;">Active</span>'
+                        : '<span style="color:#dc3545;font-weight:600;">Inactive</span>')}
+                    ${row('Verified', u.is_verified
+                        ? '<span style="color:#27ae60;font-weight:600;">Yes</span>'
+                        : '<span style="color:#f39c12;font-weight:600;">No</span>')}
+                    ${row('Created At', new Date(u.created_at).toLocaleString())}
+                </table>
+            `;
+        } catch (_) {
+            document.getElementById('viewModalBody').innerHTML =
+                '<div style="text-align:center;color:#dc3545;padding:2rem;">Failed to load user details.</div>';
+        }
+    }
+
+    function row(label, value) {
+        return `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:10px 8px;font-weight:600;color:#555;width:40%;">${label}</td>
+                <td style="padding:10px 8px;color:#333;">${value}</td>
+            </tr>`;
+    }
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.add('hidden');
+    }
+
+    // ---------------------------------------------------------------
+    // Delete
+    // ---------------------------------------------------------------
+    async function deleteUser(userId, email) {
+        if (!confirm(`Are you sure you want to delete "${email}"? This cannot be undone.`)) return;
+        try {
+            await apiRequest('/admin_panel/api/user-details', 'DELETE', { user_id: userId });
+            loadUsers();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Init
+    // ---------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+        loadRoles();
+        loadUsers();
+
+        // Live label update on toggle change
+        document.getElementById('isActive').addEventListener('change', function () {
+            document.getElementById('isActiveLabel').textContent = this.checked ? 'Active' : 'Inactive';
+        });
+    });
+</script>
+{% endblock %}

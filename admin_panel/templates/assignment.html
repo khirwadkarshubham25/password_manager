@@ -1,0 +1,587 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Policy Assignments - Password Manager Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .page-header h2 { color: #333; font-size: 1.8rem; margin: 0; }
+
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+
+    /* Toolbar */
+    .toolbar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+
+    .filter-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+
+    .search-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        flex: 1;
+        min-width: 200px;
+        max-width: 320px;
+    }
+
+    .search-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+
+    .search-group input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        width: 100%;
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+        background: white;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-50px); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .modal-header h3 { margin: 0; color: #333; font-size: 1.25rem; }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .modal-close:hover { color: #333; transform: none; box-shadow: none; }
+
+    .modal-body { padding: 20px; }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #f0f0f0;
+        background: #f8f9fa;
+        border-radius: 0 0 10px 10px;
+    }
+
+    .modal-actions button { flex: 1; }
+
+    /* Action buttons */
+    .action-buttons { display: flex; gap: 6px; }
+
+    .btn-view {
+        background: #6f42c1;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-view:hover { background: #5a32a3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-edit {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-edit:hover { background: #0056b3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-delete:hover { background: #c82333; transform: translateY(-1px); box-shadow: none; }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .page-info { color: #666; font-weight: 600; min-width: 120px; text-align: center; }
+
+    @media (max-width: 768px) {
+        .page-header { flex-direction: column; gap: 15px; align-items: stretch; }
+        .btn-create { justify-content: center; }
+        .toolbar { flex-direction: column; }
+        .modal-content { margin: 20px; }
+        .action-buttons { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Policy Assignments</h2>
+    <button class="btn-create" onclick="openCreateModal()">
+        <span>+</span> Create Assignment
+    </button>
+</div>
+
+<!-- Create Modal -->
+<div id="createModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Create Assignment</h3>
+            <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="createUserId">User *</label>
+                <select id="createUserId">
+                    <option value="">Select User...</option>
+                </select>
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="createPolicyId">Policy *</label>
+                <select id="createPolicyId">
+                    <option value="">Select Policy...</option>
+                </select>
+                <div class="error-message"></div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button onclick="submitCreate()">Save Assignment</button>
+            <button class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal — only policy is updatable -->
+<div id="editModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Assignment</h3>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editAssignmentId">
+
+            <div class="form-group">
+                <label>User</label>
+                <input type="text" id="editUserDisplay" disabled style="background:#f8f9fa;color:#666;">
+            </div>
+
+            <div class="form-group">
+                <label for="editPolicyId">Policy *</label>
+                <select id="editPolicyId">
+                    <option value="">Select Policy...</option>
+                </select>
+                <div class="error-message"></div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button onclick="submitEdit()">Save Changes</button>
+            <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div id="viewModal" class="modal hidden">
+    <div class="modal-content" style="max-width:520px;">
+        <div class="modal-header">
+            <h3>Assignment Details</h3>
+            <button class="modal-close" onclick="closeViewModal()">&times;</button>
+        </div>
+        <div id="viewModalBody" class="modal-body">
+            <div style="text-align:center;padding:2rem;color:#999;">Loading...</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+    <div class="search-group">
+        <label>Search</label>
+        <input type="text" id="searchInput" placeholder="Search by name or policy..." oninput="filterTable()">
+    </div>
+    <div class="filter-group">
+        <label>Sort By</label>
+        <select id="sortBy">
+            <option value="created_at">Created Date</option>
+            <option value="policy_name">Policy Name</option>
+            <option value="first_name">First Name</option>
+            <option value="last_name">Last Name</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Order</label>
+        <select id="sortOrder">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+        </select>
+    </div>
+    <button class="btn-secondary" style="padding:8px 20px;font-size:14px;" onclick="applyFilters()">Apply Filters</button>
+</div>
+
+<!-- Table -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>User</th>
+            <th>Email</th>
+            <th>Policy</th>
+            <th>Assigned By</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="assignmentsTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">Loading assignments...</td></tr>
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    <button id="prevPageBtn" disabled onclick="changePage(-1)">← Previous</button>
+    <span class="page-info" id="pageInfo">Page 1</span>
+    <button id="nextPageBtn" disabled onclick="changePage(1)">Next →</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const state = {
+        page: 1, pageSize: 10,
+        sortBy: 'created_at', sortOrder: 'desc',
+        totalPages: 1,
+        assignments: []
+    };
+
+    // ---------------------------------------------------------------
+    // Load assignments
+    // ---------------------------------------------------------------
+    async function loadAssignments() {
+        const url = `/admin_panel/api/assignments?page=${state.page}&page_size=${state.pageSize}&sort_by=${state.sortBy}&sort_order=${state.sortOrder}`;
+        try {
+            const data = await apiRequest(url, 'GET', null, false);
+            state.assignments = data.data || [];
+            renderTable(state.assignments, (state.page - 1) * state.pageSize);
+            updatePagination(data.pagination);
+        } catch (_) {
+            document.getElementById('assignmentsTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load assignments.</td></tr>';
+        }
+    }
+
+    function renderTable(assignments, offset) {
+        const tbody = document.getElementById('assignmentsTableBody');
+        if (!assignments.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">No assignments found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = assignments.map((a, i) => `
+            <tr>
+                <td><strong>${offset + i + 1}</strong></td>
+                <td>${a.first_name || ''} ${a.last_name || ''}</td>
+                <td>${a.email || '—'}</td>
+                <td><strong>${a.policy_name || '—'}</strong></td>
+                <td>${a.assigned_by_email || '—'}</td>
+                <td>${new Date(a.created_at).toLocaleDateString()}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-view" onclick="viewAssignment(${a.assignment_id})">View</button>
+                        <button class="btn-edit" onclick="openEditModal(${a.assignment_id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteAssignment(${a.assignment_id}, '${a.first_name} ${a.last_name}')">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updatePagination(pg) {
+        state.totalPages = pg.total_pages || 1;
+        document.getElementById('pageInfo').textContent = `Page ${pg.page} of ${state.totalPages}`;
+        document.getElementById('prevPageBtn').disabled = pg.page <= 1;
+        document.getElementById('nextPageBtn').disabled = pg.page >= state.totalPages;
+    }
+
+    function changePage(delta) {
+        state.page = Math.max(1, Math.min(state.page + delta, state.totalPages));
+        loadAssignments();
+    }
+
+    function applyFilters() {
+        state.sortBy = document.getElementById('sortBy').value;
+        state.sortOrder = document.getElementById('sortOrder').value;
+        state.page = 1;
+        loadAssignments();
+    }
+
+    // Client-side search filter
+    function filterTable() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('#assignmentsTableBody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // Load dropdowns
+    // ---------------------------------------------------------------
+    async function loadPoliciesDropdown(selectId, selectedId = null) {
+        try {
+            const data = await apiRequest('/admin_panel/api/policies?page=1&page_size=100&sort_by=policy_name&sort_order=asc', 'GET', null, false);
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Select Policy...</option>' +
+                (data.data || []).map(p =>
+                    `<option value="${p.policy_id}" ${selectedId == p.policy_id ? 'selected' : ''}>${p.policy_name}</option>`
+                ).join('');
+        } catch (_) {}
+    }
+
+    async function loadUsersDropdown(selectId) {
+        try {
+            const data = await apiRequest('/admin_panel/api/users?page=1&page_size=100&sort_by=first_name&sort_order=asc', 'GET', null, false);
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Select User...</option>' +
+                (data.data || []).map(u =>
+                    `<option value="${u.user_id}">${u.first_name} ${u.last_name} (${u.email})</option>`
+                ).join('');
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Create modal
+    // ---------------------------------------------------------------
+    function openCreateModal() {
+        document.getElementById('createUserId').innerHTML = '<option value="">Loading...</option>';
+        document.getElementById('createPolicyId').innerHTML = '<option value="">Loading...</option>';
+        clearErrors('createModal');
+        loadUsersDropdown('createUserId');
+        loadPoliciesDropdown('createPolicyId');
+        document.getElementById('createModal').classList.remove('hidden');
+    }
+
+    function closeCreateModal() {
+        document.getElementById('createModal').classList.add('hidden');
+    }
+
+    async function submitCreate() {
+        const userId   = document.getElementById('createUserId').value;
+        const policyId = document.getElementById('createPolicyId').value;
+
+        clearErrors('createModal');
+        if (!userId)   { setFieldError('createUserId',   'User is required');   return; }
+        if (!policyId) { setFieldError('createPolicyId', 'Policy is required'); return; }
+
+        try {
+            await apiRequest('/admin_panel/api/assignment-details', 'POST', {
+                user_id: parseInt(userId),
+                policy_id: parseInt(policyId)
+            });
+            closeCreateModal();
+            loadAssignments();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Edit modal — only policy is updatable per service design
+    // ---------------------------------------------------------------
+    async function openEditModal(assignmentId) {
+        const a = state.assignments.find(a => a.assignment_id === assignmentId);
+        if (!a) return;
+
+        document.getElementById('editAssignmentId').value = assignmentId;
+        document.getElementById('editUserDisplay').value  = `${a.first_name || ''} ${a.last_name || ''} (${a.email || ''})`;
+        document.getElementById('editPolicyId').innerHTML = '<option value="">Loading...</option>';
+        clearErrors('editModal');
+        await loadPoliciesDropdown('editPolicyId', a.policy_id);
+        document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').classList.add('hidden');
+    }
+
+    async function submitEdit() {
+        const assignmentId = document.getElementById('editAssignmentId').value;
+        const policyId     = document.getElementById('editPolicyId').value;
+
+        clearErrors('editModal');
+        if (!policyId) { setFieldError('editPolicyId', 'Policy is required'); return; }
+
+        try {
+            await apiRequest('/admin_panel/api/assignment-details', 'PUT', {
+                assignment_id: parseInt(assignmentId),
+                policy_id: parseInt(policyId)
+            });
+            closeEditModal();
+            loadAssignments();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // View details
+    // ---------------------------------------------------------------
+    async function viewAssignment(assignmentId) {
+        document.getElementById('viewModalBody').innerHTML =
+            '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
+        document.getElementById('viewModal').classList.remove('hidden');
+        try {
+            const data = await apiRequest(`/admin_panel/api/assignment-details?assignment_id=${assignmentId}`, 'GET', null, false);
+            const a = data.data;
+            document.getElementById('viewModalBody').innerHTML = `
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('User', `${a.first_name || ''} ${a.last_name || ''}`)}
+                    ${row('Email', a.email || '—')}
+                    ${row('Policy', a.policy_name || '—')}
+                    ${row('Assigned By', a.assigned_by_email || '—')}
+                    ${row('Created At', new Date(a.created_at).toLocaleString())}
+                    ${row('Updated At', new Date(a.updated_at).toLocaleString())}
+                </table>
+            `;
+        } catch (_) {
+            document.getElementById('viewModalBody').innerHTML =
+                '<div style="text-align:center;color:#dc3545;padding:2rem;">Failed to load assignment details.</div>';
+        }
+    }
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.add('hidden');
+    }
+
+    function row(label, value) {
+        return `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:10px 8px;font-weight:600;color:#555;width:40%;">${label}</td>
+            <td style="padding:10px 8px;color:#333;">${value}</td>
+        </tr>`;
+    }
+
+    // ---------------------------------------------------------------
+    // Delete
+    // ---------------------------------------------------------------
+    async function deleteAssignment(assignmentId, userName) {
+        if (!confirm(`Are you sure you want to delete the assignment for "${userName}"?`)) return;
+        try {
+            await apiRequest('/admin_panel/api/assignment-details', 'DELETE', { assignment_id: assignmentId });
+            loadAssignments();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+    function setFieldError(fieldId, message) {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        const group = el.closest('.form-group');
+        if (!group) return;
+        group.classList.add('error');
+        const err = group.querySelector('.error-message');
+        if (err) err.textContent = message;
+    }
+
+    function clearErrors(modalId) {
+        document.querySelectorAll(`#${modalId} .form-group`).forEach(g => {
+            g.classList.remove('error');
+            const err = g.querySelector('.error-message');
+            if (err) err.textContent = '';
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // Init
+    // ---------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', loadAssignments);
+</script>
+{% endblock %}

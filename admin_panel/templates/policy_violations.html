@@ -1,0 +1,528 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Policy Violations - Password Manager Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .page-header h2 { color: #333; font-size: 1.8rem; margin: 0; }
+    .page-subtitle   { font-size: 13px; color: #888; margin-top: 4px; }
+
+    .toolbar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+
+    .search-group {
+        display: flex; flex-direction: column; gap: 5px;
+        flex: 1; min-width: 200px; max-width: 260px;
+    }
+    .search-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+    .search-group input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    /* Badges */
+    .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-low      { background: #d4edda; color: #155724; }
+    .badge-medium   { background: #fff3cd; color: #856404; }
+    .badge-high     { background: #f8d7da; color: #721c24; }
+    .badge-critical { background: #721c24; color: #fff; }
+
+    .badge-length        { background: #e3f2fd; color: #1565c0; }
+    .badge-complexity    { background: #f3e5f5; color: #6a1b9a; }
+    .badge-patterns      { background: #fff8e1; color: #f57f17; }
+    .badge-history       { background: #e8f5e9; color: #2e7d32; }
+    .badge-personal_info { background: #fce4ec; color: #880e4f; }
+    .badge-breach        { background: #fbe9e7; color: #bf360c; }
+
+    .code-chip {
+        font-family: monospace;
+        font-size: 12px;
+        background: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 2px 7px;
+        color: #444;
+        white-space: nowrap;
+    }
+
+    .user-cell { font-size: 13px; }
+    .user-cell .user-name  { font-weight: 600; color: #333; }
+    .user-cell .user-email { color: #888; font-size: 12px; }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+        background: white;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 560px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-40px); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        flex-shrink: 0;
+    }
+
+    .modal-header h3 { margin: 0; color: #333; font-size: 1.2rem; }
+
+    .modal-close {
+        background: none; border: none;
+        font-size: 28px; color: #999;
+        cursor: pointer; padding: 0; line-height: 1;
+    }
+    .modal-close:hover { color: #333; transform: none; box-shadow: none; }
+
+    .modal-body {
+        padding: 20px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #f0f0f0;
+        background: #f8f9fa;
+        border-radius: 0 0 10px 10px;
+        flex-shrink: 0;
+    }
+
+    /* Detail sections */
+    .detail-section {
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .detail-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+    .detail-section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: #aaa;
+        margin-bottom: 12px;
+    }
+
+    .detail-row {
+        display: flex;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #f9f9f9;
+        font-size: 14px;
+    }
+
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-label {
+        font-weight: 600;
+        color: #555;
+        width: 140px;
+        flex-shrink: 0;
+    }
+
+    .detail-value { color: #333; flex: 1; }
+
+    /* User info card in modal */
+    .user-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 4px;
+    }
+
+    .user-avatar {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .user-card-name  { font-weight: 700; font-size: 15px; color: #333; }
+    .user-card-email { font-size: 13px; color: #888; margin-top: 2px; }
+    .user-card-id    { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+    /* Violation badge header */
+    .detail-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    /* Action buttons */
+    .btn-view {
+        background: #6f42c1; color: white; border: none;
+        padding: 5px 10px; border-radius: 4px;
+        cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-view:hover { background: #5a32a3; transform: translateY(-1px); box-shadow: none; }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .page-info { color: #666; font-weight: 600; min-width: 140px; text-align: center; }
+
+    @media (max-width: 768px) {
+        .toolbar { flex-direction: column; }
+        .modal-content { margin: 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Policy Violations</h2>
+        <div class="page-subtitle">Password policy violations triggered by users</div>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+    <div class="search-group">
+        <label>User ID</label>
+        <input type="text" id="userIdFilter" placeholder="Filter by user ID...">
+    </div>
+    <div class="filter-group">
+        <label>Severity</label>
+        <select id="severityFilter">
+            <option value="">All Severities</option>
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+            <option value="CRITICAL">Critical</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Category</label>
+        <select id="categoryFilter">
+            <option value="">All Categories</option>
+            <option value="LENGTH">Length</option>
+            <option value="COMPLEXITY">Complexity</option>
+            <option value="PATTERNS">Patterns</option>
+            <option value="HISTORY">History</option>
+            <option value="PERSONAL_INFO">Personal Info</option>
+            <option value="BREACH">Breach</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Sort By</label>
+        <select id="sortBy">
+            <option value="created_at">Created Date</option>
+            <option value="severity">Severity</option>
+            <option value="category">Category</option>
+            <option value="violation_name">Name</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Order</label>
+        <select id="sortOrder">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+        </select>
+    </div>
+    <button class="btn-secondary" style="padding:8px 20px;font-size:14px;" onclick="applyFilters()">Apply</button>
+</div>
+
+<!-- Table -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Violation Name</th>
+            <th>User</th>
+            <th>Category</th>
+            <th>Severity</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="violationsTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">Loading violations...</td></tr>
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    <button id="prevBtn" disabled onclick="changePage(-1)">← Previous</button>
+    <span class="page-info" id="pageInfo">Page 1</span>
+    <button id="nextBtn" disabled onclick="changePage(1)">Next →</button>
+</div>
+
+<!-- View Details Modal -->
+<div id="viewModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Violation Details</h3>
+            <button class="modal-close" onclick="closeViewModal()">&times;</button>
+        </div>
+        <div id="viewModalBody" class="modal-body">
+            <div style="text-align:center;padding:2rem;color:#999;">Loading...</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const state = {
+        page: 1, pageSize: 10,
+        sortBy: 'created_at', sortOrder: 'desc',
+        severity: '', category: '', userId: '',
+        totalPages: 1
+    };
+
+    // ---------------------------------------------------------------
+    // Load violations
+    // ---------------------------------------------------------------
+    async function loadViolations() {
+        const { page, pageSize, sortBy, sortOrder, severity, category, userId } = state;
+        let url = `/admin_panel/api/policy-violations?page=${page}&page_size=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}`;
+        if (severity) url += `&severity=${severity}`;
+        if (category) url += `&category=${category}`;
+        if (userId)   url += `&user_id=${encodeURIComponent(userId)}`;
+
+        try {
+            const data = await apiRequest(url, 'GET', null, false);
+            renderTable(data.data || [], (page - 1) * pageSize);
+            updatePagination(data.pagination);
+        } catch (_) {
+            document.getElementById('violationsTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load violations.</td></tr>';
+        }
+    }
+
+    function renderTable(violations, offset) {
+        const tbody = document.getElementById('violationsTableBody');
+        if (!violations.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">No violations found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = violations.map((v, i) => `
+            <tr>
+                <td><strong>${offset + i + 1}</strong></td>
+                <td>
+                    <div style="font-weight:600;font-size:14px;">${v.violation_name}</div>
+                    <div><span class="code-chip">${v.violation_code}</span></div>
+                </td>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-name">${v.first_name} ${v.last_name}</div>
+                        <div class="user-email">${v.email}</div>
+                    </div>
+                </td>
+                <td><span class="badge badge-${v.category.toLowerCase()}">${formatCategory(v.category)}</span></td>
+                <td><span class="badge badge-${v.severity.toLowerCase()}">${v.severity}</span></td>
+                <td style="font-size:13px;color:#666;">${formatDate(v.created_at)}</td>
+                <td>
+                    <button class="btn-view" onclick="viewViolation(${v.violation_id})">View</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updatePagination(pg) {
+        if (!pg) return;
+        state.totalPages = pg.total_pages || 1;
+        document.getElementById('pageInfo').textContent  = `Page ${pg.page} of ${state.totalPages} (${pg.total} total)`;
+        document.getElementById('prevBtn').disabled      = pg.page <= 1;
+        document.getElementById('nextBtn').disabled      = pg.page >= state.totalPages;
+    }
+
+    function changePage(delta) {
+        state.page = Math.max(1, Math.min(state.page + delta, state.totalPages));
+        loadViolations();
+    }
+
+    function applyFilters() {
+        state.sortBy    = document.getElementById('sortBy').value;
+        state.sortOrder = document.getElementById('sortOrder').value;
+        state.severity  = document.getElementById('severityFilter').value;
+        state.category  = document.getElementById('categoryFilter').value;
+        state.userId    = document.getElementById('userIdFilter').value.trim();
+        state.page      = 1;
+        loadViolations();
+    }
+
+    // ---------------------------------------------------------------
+    // View details modal
+    // ---------------------------------------------------------------
+    async function viewViolation(id) {
+        document.getElementById('viewModalBody').innerHTML =
+            '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
+        document.getElementById('viewModal').classList.remove('hidden');
+
+        try {
+            const data = await apiRequest(`/admin_panel/api/policy-violation-details?violation_id=${id}`, 'GET', null, false);
+            const v = data.data;
+
+            const initial = ((v.first_name || '') + (v.last_name || '') || v.email || '?')[0].toUpperCase();
+
+            document.getElementById('viewModalBody').innerHTML = `
+
+                <!-- Violation identity -->
+                <div class="detail-section">
+                    <div class="detail-section-title">Violation</div>
+                    <div class="detail-header">
+                        <span class="code-chip">${v.violation_code}</span>
+                        <span class="badge badge-${v.category.toLowerCase()}">${formatCategory(v.category)}</span>
+                        <span class="badge badge-${v.severity.toLowerCase()}">${v.severity}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Violation Name</span>
+                        <span class="detail-value"><strong>${v.violation_name}</strong></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Code</span>
+                        <span class="detail-value"><span class="code-chip">${v.violation_code}</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Category</span>
+                        <span class="detail-value"><span class="badge badge-${v.category.toLowerCase()}">${formatCategory(v.category)}</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Severity</span>
+                        <span class="detail-value"><span class="badge badge-${v.severity.toLowerCase()}">${v.severity}</span></span>
+                    </div>
+                    ${v.description ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Description</span>
+                        <span class="detail-value">${v.description}</span>
+                    </div>` : ''}
+                    <div class="detail-row">
+                        <span class="detail-label">Triggered At</span>
+                        <span class="detail-value">${formatDateTime(v.created_at)}</span>
+                    </div>
+                </div>
+
+                <!-- User info -->
+                <div class="detail-section">
+                    <div class="detail-section-title">User</div>
+                    <div class="user-card">
+                        <div class="user-avatar">${initial}</div>
+                        <div>
+                            <div class="user-card-name">${v.first_name} ${v.last_name}</div>
+                            <div class="user-card-email">${v.email}</div>
+                            <div class="user-card-id">User ID: ${v.user_id}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (_) {
+            document.getElementById('viewModalBody').innerHTML =
+                '<div style="text-align:center;color:#dc3545;padding:2rem;">Failed to load violation details.</div>';
+        }
+    }
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.add('hidden');
+    }
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+    function formatCategory(cat) {
+        return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatDateTime(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ---------------------------------------------------------------
+    // Init
+    // ---------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', loadViolations);
+</script>
+{% endblock %}

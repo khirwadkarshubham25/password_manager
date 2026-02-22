@@ -1,0 +1,836 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Breach Management - Password Manager Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .page-header h2 { color: #333; font-size: 1.8rem; margin: 0; }
+
+    .btn-create {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+
+    /* Tabs */
+    .tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .tab {
+        padding: 10px 24px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6c757d;
+        transition: all 0.2s;
+    }
+
+    .tab:hover { color: #667eea; transform: none; box-shadow: none; }
+
+    .tab.active { color: #667eea; border-bottom-color: #667eea; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        z-index: 1000;
+        overflow-y: auto;
+        padding: 20px 0;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+        background: white;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 580px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
+        margin: auto;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-50px); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        position: sticky;
+        top: 0;
+        background: white;
+        border-radius: 10px 10px 0 0;
+        z-index: 1;
+    }
+
+    .modal-header h3 { margin: 0; color: #333; font-size: 1.25rem; }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .modal-close:hover { color: #333; transform: none; box-shadow: none; }
+
+    .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #f0f0f0;
+        background: #f8f9fa;
+        border-radius: 0 0 10px 10px;
+        position: sticky;
+        bottom: 0;
+    }
+
+    .modal-actions button { flex: 1; }
+
+    /* Toggle */
+    .toggle-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        border: 1px solid #e9ecef;
+        margin-bottom: 1rem;
+    }
+
+    .toggle-item label:first-child { margin: 0; font-size: 14px; font-weight: 500; color: #333; }
+
+    .toggle-switch {
+        position: relative;
+        width: 46px; height: 24px;
+        flex-shrink: 0;
+        margin-left: 12px;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #ccc;
+        border-radius: 24px;
+        transition: 0.3s;
+    }
+
+    .toggle-slider::before {
+        content: '';
+        position: absolute;
+        width: 18px; height: 18px;
+        left: 3px; bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background: #667eea; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+    /* Toolbar */
+    .toolbar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 140px;
+    }
+
+    .search-group {
+        display: flex; flex-direction: column; gap: 5px;
+        flex: 1; min-width: 180px; max-width: 300px;
+    }
+
+    .search-group label { font-size: 13px; font-weight: 600; color: #333; margin: 0; }
+    .search-group input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    /* Severity badges */
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .badge-low      { background: #d4edda; color: #155724; }
+    .badge-medium   { background: #fff3cd; color: #856404; }
+    .badge-high     { background: #f8d7da; color: #721c24; }
+    .badge-critical { background: #721c24; color: white; }
+    .badge-active   { background: #d4edda; color: #155724; }
+    .badge-inactive { background: #f8d7da; color: #721c24; }
+
+    /* Action buttons */
+    .action-buttons { display: flex; gap: 6px; }
+
+    .btn-view {
+        background: #6f42c1; color: white; border: none;
+        padding: 5px 10px; border-radius: 4px;
+        cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-view:hover { background: #5a32a3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-edit {
+        background: #007bff; color: white; border: none;
+        padding: 5px 10px; border-radius: 4px;
+        cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-edit:hover { background: #0056b3; transform: translateY(-1px); box-shadow: none; }
+
+    .btn-delete {
+        background: #dc3545; color: white; border: none;
+        padding: 5px 10px; border-radius: 4px;
+        cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-delete:hover { background: #c82333; transform: translateY(-1px); box-shadow: none; }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .page-info { color: #666; font-weight: 600; min-width: 120px; text-align: center; }
+
+    @media (max-width: 768px) {
+        .page-header { flex-direction: column; gap: 15px; align-items: stretch; }
+        .btn-create { justify-content: center; }
+        .toolbar { flex-direction: column; }
+        .modal-content { margin: 10px; }
+        .action-buttons { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Breach Management</h2>
+    <button class="btn-create" id="createBtn" onclick="openCreateModal()">
+        <span>+</span> Add Breach Database
+    </button>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('databases')">Breach Databases</button>
+    <button class="tab" onclick="switchTab('hashes')">Breached Password Hashes</button>
+</div>
+
+<!-- ===================== DATABASES TAB ===================== -->
+<div id="databases-tab" class="tab-content active">
+
+    <div class="toolbar">
+        <div class="search-group">
+            <label>Search</label>
+            <input type="text" id="dbSearch" placeholder="Search databases..." oninput="filterDbTable()">
+        </div>
+        <div class="filter-group">
+            <label>Sort By</label>
+            <select id="dbSortBy">
+                <option value="created_at">Created Date</option>
+                <option value="source_name">Source Name</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Order</label>
+            <select id="dbSortOrder">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+            </select>
+        </div>
+        <button class="btn-secondary" style="padding:8px 20px;font-size:14px;" onclick="applyDbFilters()">Apply</button>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Source Name</th>
+                <th>Source URL</th>
+                <th>Auth Method</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="dbTableBody">
+            <tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">Loading databases...</td></tr>
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <button id="dbPrevBtn" disabled onclick="changeDbPage(-1)">← Previous</button>
+        <span class="page-info" id="dbPageInfo">Page 1</span>
+        <button id="dbNextBtn" disabled onclick="changeDbPage(1)">Next →</button>
+    </div>
+</div>
+
+<!-- ===================== HASHES TAB ===================== -->
+<div id="hashes-tab" class="tab-content">
+
+    <div class="toolbar">
+        <div class="search-group">
+            <label>Search</label>
+            <input type="text" id="hashSearch" placeholder="Search hashes..." oninput="filterHashTable()">
+        </div>
+        <div class="filter-group">
+            <label>Severity</label>
+            <select id="hashSeverity" onchange="applyHashFilters()">
+                <option value="">All</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Breach Source</label>
+            <select id="hashSourceFilter" onchange="applyHashFilters()">
+                <option value="">All Sources</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Sort By</label>
+            <select id="hashSortBy">
+                <option value="occurrence_count">Occurrence Count</option>
+                <option value="severity">Severity</option>
+                <option value="created_at">Created Date</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Order</label>
+            <select id="hashSortOrder">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+            </select>
+        </div>
+        <button class="btn-secondary" style="padding:8px 20px;font-size:14px;" onclick="applyHashFilters()">Apply</button>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Password Hash</th>
+                <th>Occurrences</th>
+                <th>Severity</th>
+                <th>Breach Source</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="hashTableBody">
+            <tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">Load the Hashes tab to view data.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <button id="hashPrevBtn" disabled onclick="changeHashPage(-1)">← Previous</button>
+        <span class="page-info" id="hashPageInfo">Page 1</span>
+        <button id="hashNextBtn" disabled onclick="changeHashPage(1)">Next →</button>
+    </div>
+</div>
+
+<!-- ===================== CREATE / EDIT DB MODAL ===================== -->
+<div id="dbModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="dbModalTitle">Add Breach Database</h3>
+            <button class="modal-close" onclick="closeDbModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="dbId">
+
+            <div class="form-group">
+                <label for="sourceName">Source Name *</label>
+                <input type="text" id="sourceName" placeholder="e.g. HaveIBeenPwned">
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="sourceUrl">Source URL *</label>
+                <input type="text" id="sourceUrl" placeholder="https://...">
+                <div class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="authMethod">Authentication Method</label>
+                <select id="authMethod">
+                    <option value="NONE">No Authentication</option>
+                    <option value="API_KEY">API Key</option>
+                    <option value="OAUTH">OAuth</option>
+                    <option value="BASIC">Basic Auth</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="apiKey">API Key</label>
+                <input type="text" id="apiKey" placeholder="Leave empty if not required">
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" rows="3" placeholder="Describe this breach database..."></textarea>
+            </div>
+            <!-- Status toggle — edit only -->
+            <div id="dbStatusGroup" style="display:none;">
+                <div class="toggle-item">
+                    <label>Active Status</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="dbIsActive">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button onclick="submitDb()">Save Database</button>
+            <button class="btn-secondary" onclick="closeDbModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== VIEW DB DETAILS MODAL ===================== -->
+<div id="dbViewModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Breach Database Details</h3>
+            <button class="modal-close" onclick="closeDbViewModal()">&times;</button>
+        </div>
+        <div id="dbViewBody" class="modal-body">
+            <div style="text-align:center;padding:2rem;color:#999;">Loading...</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeDbViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== VIEW HASH DETAILS MODAL ===================== -->
+<div id="hashViewModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Breached Hash Details</h3>
+            <button class="modal-close" onclick="closeHashViewModal()">&times;</button>
+        </div>
+        <div id="hashViewBody" class="modal-body">
+            <div style="text-align:center;padding:2rem;color:#999;">Loading...</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeHashViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ---------------------------------------------------------------
+    // State
+    // ---------------------------------------------------------------
+    const dbState   = { page: 1, pageSize: 10, sortBy: 'created_at', sortOrder: 'desc', totalPages: 1, records: [] };
+    const hashState = { page: 1, pageSize: 10, sortBy: 'occurrence_count', sortOrder: 'desc', totalPages: 1, severity: '', breachDatabaseId: '' };
+
+    let activeTab = 'databases';
+    let isDbEdit  = false;
+
+    // ---------------------------------------------------------------
+    // Tab switching
+    // ---------------------------------------------------------------
+    function switchTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        if (tab === 'databases') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('databases-tab').classList.add('active');
+            document.getElementById('createBtn').style.display = 'flex';
+        } else {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('hashes-tab').classList.add('active');
+            document.getElementById('createBtn').style.display = 'none';
+            if (hashState.page === 1 && document.getElementById('hashTableBody').rows.length <= 1) {
+                loadHashes();
+                loadBreachSourcesDropdown();
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // BREACH DATABASES
+    // ---------------------------------------------------------------
+    async function loadDatabases() {
+        const url = `/admin_panel/api/breach-databases?page=${dbState.page}&page_size=${dbState.pageSize}&sort_by=${dbState.sortBy}&sort_order=${dbState.sortOrder}`;
+        try {
+            const data = await apiRequest(url, 'GET', null, false);
+            dbState.records = data.data || [];
+            renderDbTable(dbState.records, (dbState.page - 1) * dbState.pageSize);
+            updatePagination('db', data.pagination);
+        } catch (_) {
+            document.getElementById('dbTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load databases.</td></tr>';
+        }
+    }
+
+    function renderDbTable(records, offset) {
+        const tbody = document.getElementById('dbTableBody');
+        if (!records.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">No breach databases found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = records.map((db, i) => `
+            <tr>
+                <td><strong>${offset + i + 1}</strong></td>
+                <td><strong>${db.source_name}</strong></td>
+                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${db.source_url}">${db.source_url}</td>
+                <td>${db.authentication_method}</td>
+                <td><span class="badge ${db.status === 1 ? 'badge-active' : 'badge-inactive'}">${db.status === 1 ? 'Active' : 'Inactive'}</span></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-view" onclick="viewDb(${db.breach_database_id})">View</button>
+                        <button class="btn-edit" onclick="openEditDbModal(${db.breach_database_id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteDb(${db.breach_database_id}, '${db.source_name}')">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function applyDbFilters() {
+        dbState.sortBy    = document.getElementById('dbSortBy').value;
+        dbState.sortOrder = document.getElementById('dbSortOrder').value;
+        dbState.page      = 1;
+        loadDatabases();
+    }
+
+    function filterDbTable() {
+        const term = document.getElementById('dbSearch').value.toLowerCase();
+        document.querySelectorAll('#dbTableBody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+
+    function changeDbPage(delta) {
+        dbState.page = Math.max(1, Math.min(dbState.page + delta, dbState.totalPages));
+        loadDatabases();
+    }
+
+    // View DB details
+    async function viewDb(id) {
+        document.getElementById('dbViewBody').innerHTML =
+            '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
+        document.getElementById('dbViewModal').classList.remove('hidden');
+        try {
+            const data = await apiRequest(`/admin_panel/api/breach-database-details?breach_database_id=${id}`, 'GET', null, false);
+            const db = data.data;
+            const bool = v => v ? '<span style="color:#27ae60;font-weight:600;">Yes</span>' : '<span style="color:#dc3545;font-weight:600;">No</span>';
+            document.getElementById('dbViewBody').innerHTML = `
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Source Name', db.source_name)}
+                    ${row('Source URL', `<a href="${db.source_url}" target="_blank" style="color:#667eea;">${db.source_url}</a>`)}
+                    ${row('Auth Method', db.authentication_method)}
+                    ${row('Hash Format', db.hash_format)}
+                    ${row('Status', db.status === 1 ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-inactive">Inactive</span>')}
+                    ${row('API Key', db.api_key || '—')}
+                    ${row('Last Updated', db.last_updated ? new Date(db.last_updated).toLocaleString() : '—')}
+                    ${row('Next Update', db.next_update_scheduled ? new Date(db.next_update_scheduled).toLocaleString() : '—')}
+                    ${row('Created At', new Date(db.created_at).toLocaleString())}
+                    ${row('Description', db.description || '—')}
+                </table>
+            `;
+        } catch (_) {
+            document.getElementById('dbViewBody').innerHTML =
+                '<div style="text-align:center;color:#dc3545;padding:2rem;">Failed to load details.</div>';
+        }
+    }
+
+    function closeDbViewModal() { document.getElementById('dbViewModal').classList.add('hidden'); }
+
+    // Create / Edit modal
+    function openCreateModal() {
+        isDbEdit = false;
+        document.getElementById('dbModalTitle').textContent = 'Add Breach Database';
+        document.getElementById('dbId').value = '';
+        clearDbForm();
+        document.getElementById('dbStatusGroup').style.display = 'none';
+        document.getElementById('dbModal').classList.remove('hidden');
+    }
+
+    async function openEditDbModal(id) {
+        try {
+            const data = await apiRequest(`/admin_panel/api/breach-database-details?breach_database_id=${id}`, 'GET', null, false);
+            const db = data.data;
+            isDbEdit = true;
+            document.getElementById('dbModalTitle').textContent = 'Edit Breach Database';
+            document.getElementById('dbId').value          = db.breach_database_id;
+            document.getElementById('sourceName').value    = db.source_name || '';
+            document.getElementById('sourceUrl').value     = db.source_url || '';
+            document.getElementById('authMethod').value    = db.authentication_method || 'NONE';
+            document.getElementById('apiKey').value        = db.api_key || '';
+            document.getElementById('description').value   = db.description || '';
+            document.getElementById('dbIsActive').checked  = db.status === 1;
+            document.getElementById('dbStatusGroup').style.display = 'block';
+            clearDbErrors();
+            document.getElementById('dbModal').classList.remove('hidden');
+        } catch (_) {}
+    }
+
+    function closeDbModal() { document.getElementById('dbModal').classList.add('hidden'); clearDbForm(); }
+
+    function clearDbForm() {
+        ['sourceName', 'sourceUrl', 'apiKey', 'description'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('authMethod').value    = 'NONE';
+        document.getElementById('dbIsActive').checked  = true;
+        clearDbErrors();
+    }
+
+    function clearDbErrors() {
+        document.querySelectorAll('#dbModal .form-group').forEach(g => {
+            g.classList.remove('error');
+            const err = g.querySelector('.error-message');
+            if (err) err.textContent = '';
+        });
+    }
+
+    function setDbFieldError(fieldId, message) {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        const group = el.closest('.form-group');
+        if (!group) return;
+        group.classList.add('error');
+        const err = group.querySelector('.error-message');
+        if (err) err.textContent = message;
+    }
+
+    async function submitDb() {
+        const id         = document.getElementById('dbId').value;
+        const sourceName = document.getElementById('sourceName').value.trim();
+        const sourceUrl  = document.getElementById('sourceUrl').value.trim();
+
+        clearDbErrors();
+        if (!sourceName) { setDbFieldError('sourceName', 'Source name is required'); return; }
+        if (!sourceUrl)  { setDbFieldError('sourceUrl',  'Source URL is required');  return; }
+
+        const payload = {
+            source_name:            sourceName,
+            source_url:             sourceUrl,
+            authentication_method:  document.getElementById('authMethod').value,
+            api_key:                document.getElementById('apiKey').value.trim() || null,
+            description:            document.getElementById('description').value.trim() || null
+        };
+
+        if (isDbEdit) {
+            payload.breach_database_id = id;
+            payload.status = document.getElementById('dbIsActive').checked ? 1 : 0;
+        }
+
+        try {
+            await apiRequest('/admin_panel/api/breach-database-details', isDbEdit ? 'PUT' : 'POST', payload);
+            closeDbModal();
+            loadDatabases();
+        } catch (_) {}
+    }
+
+    async function deleteDb(id, name) {
+        if (!confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) return;
+        try {
+            await apiRequest('/admin_panel/api/breach-database-details', 'DELETE', { breach_database_id: id });
+            loadDatabases();
+        } catch (_) {}
+    }
+
+    // ---------------------------------------------------------------
+    // BREACHED HASHES (read-only)
+    // ---------------------------------------------------------------
+    async function loadHashes() {
+        const { page, pageSize, sortBy, sortOrder, severity, breachDatabaseId } = hashState;
+        let url = `/admin_panel/api/breached-hashes?page=${page}&page_size=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}`;
+        if (severity)        url += `&severity=${severity}`;
+        if (breachDatabaseId) url += `&breach_database_id=${breachDatabaseId}`;
+        try {
+            const data = await apiRequest(url, 'GET', null, false);
+            renderHashTable(data.data || [], (page - 1) * pageSize);
+            updatePagination('hash', data.pagination);
+        } catch (_) {
+            document.getElementById('hashTableBody').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load hashes.</td></tr>';
+        }
+    }
+
+    function renderHashTable(hashes, offset) {
+        const tbody = document.getElementById('hashTableBody');
+        if (!hashes.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#999;">No hashes found.</td></tr>';
+            return;
+        }
+        const severityClass = s => ({ LOW: 'badge-low', MEDIUM: 'badge-medium', HIGH: 'badge-high', CRITICAL: 'badge-critical' }[s] || 'badge-low');
+        tbody.innerHTML = hashes.map((h, i) => `
+            <tr>
+                <td><strong>${offset + i + 1}</strong></td>
+                <td><code style="font-size:12px;">${h.password_hash.substring(0, 32)}${h.password_hash.length > 32 ? '…' : ''}</code></td>
+                <td>${(h.occurrence_count || 0).toLocaleString()}</td>
+                <td><span class="badge ${severityClass(h.severity)}">${h.severity}</span></td>
+                <td>${h.breach_source_name || '—'}</td>
+                <td>${new Date(h.created_at).toLocaleDateString()}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-view" onclick="viewHash(${h.breach_hash_id})">View</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function applyHashFilters() {
+        hashState.sortBy          = document.getElementById('hashSortBy').value;
+        hashState.sortOrder       = document.getElementById('hashSortOrder').value;
+        hashState.severity        = document.getElementById('hashSeverity').value;
+        hashState.breachDatabaseId = document.getElementById('hashSourceFilter').value;
+        hashState.page = 1;
+        loadHashes();
+    }
+
+    function filterHashTable() {
+        const term = document.getElementById('hashSearch').value.toLowerCase();
+        document.querySelectorAll('#hashTableBody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+
+    function changeHashPage(delta) {
+        hashState.page = Math.max(1, Math.min(hashState.page + delta, hashState.totalPages));
+        loadHashes();
+    }
+
+    async function loadBreachSourcesDropdown() {
+        try {
+            const data = await apiRequest('/admin_panel/api/breach-databases?page=1&page_size=100&sort_by=source_name&sort_order=asc', 'GET', null, false);
+            const select = document.getElementById('hashSourceFilter');
+            select.innerHTML = '<option value="">All Sources</option>' +
+                (data.data || []).map(db => `<option value="${db.breach_database_id}">${db.source_name}</option>`).join('');
+        } catch (_) {}
+    }
+
+    async function viewHash(id) {
+        document.getElementById('hashViewBody').innerHTML =
+            '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
+        document.getElementById('hashViewModal').classList.remove('hidden');
+        try {
+            const data = await apiRequest(`/admin_panel/api/breached-hash-details?breach_hash_id=${id}`, 'GET', null, false);
+            const h = data.data;
+            const severityClass = s => ({ LOW: 'badge-low', MEDIUM: 'badge-medium', HIGH: 'badge-high', CRITICAL: 'badge-critical' }[s] || 'badge-low');
+            document.getElementById('hashViewBody').innerHTML = `
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    ${row('Password Hash', `<code style="word-break:break-all;font-size:12px;">${h.password_hash}</code>`)}
+                    ${row('Hash Format', h.hash_format)}
+                    ${row('Occurrence Count', (h.occurrence_count || 0).toLocaleString())}
+                    ${row('Severity', `<span class="badge ${severityClass(h.severity)}">${h.severity}</span>`)}
+                    ${row('Breach Source', h.breach_source_name)}
+                    ${row('Source URL', `<a href="${h.breach_source_url}" target="_blank" style="color:#667eea;">${h.breach_source_url}</a>`)}
+                    ${row('Indexed', h.is_indexed ? '<span style="color:#27ae60;font-weight:600;">Yes</span>' : '<span style="color:#dc3545;font-weight:600;">No</span>')}
+                    ${row('First Seen', h.first_seen_date ? new Date(h.first_seen_date).toLocaleDateString() : '—')}
+                    ${row('Created At', new Date(h.created_at).toLocaleString())}
+                </table>
+            `;
+        } catch (_) {
+            document.getElementById('hashViewBody').innerHTML =
+                '<div style="text-align:center;color:#dc3545;padding:2rem;">Failed to load hash details.</div>';
+        }
+    }
+
+    function closeHashViewModal() { document.getElementById('hashViewModal').classList.add('hidden'); }
+
+    // ---------------------------------------------------------------
+    // Shared helpers
+    // ---------------------------------------------------------------
+    function updatePagination(prefix, pg) {
+        const state = prefix === 'db' ? dbState : hashState;
+        state.totalPages = pg.total_pages || 1;
+        document.getElementById(`${prefix}PageInfo`).textContent = `Page ${pg.page} of ${state.totalPages}`;
+        document.getElementById(`${prefix}PrevBtn`).disabled = pg.page <= 1;
+        document.getElementById(`${prefix}NextBtn`).disabled = pg.page >= state.totalPages;
+    }
+
+    function row(label, value) {
+        return `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:10px 8px;font-weight:600;color:#555;width:40%;">${label}</td>
+            <td style="padding:10px 8px;color:#333;">${value}</td>
+        </tr>`;
+    }
+
+    // ---------------------------------------------------------------
+    // Init
+    // ---------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', loadDatabases);
+</script>
+{% endblock %}
